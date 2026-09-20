@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Homak Remote Support Agent</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #f7f9ff;
+      color: #181c20;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 12px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    input, textarea, .chat-messages, .msg {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e0e2ec;
+    }
+    .brand {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0041a2;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34a853;
+      display: inline-block;
+    }
+    .dot.yellow { background: #fbbc04; }
+    .dot.red { background: #ea4335; }
+    .code-box {
+      background: #eaf1ff;
+      border: 1px solid #c3c6d6;
+      border-radius: 8px;
+      padding: 6px;
+      text-align: center;
+      margin: 6px 0;
+    }
+    .code-label { font-size: 10px; text-transform: uppercase; color: #424654; letter-spacing: 1px; font-weight: 600; }
+    .code-val { font-size: 22px; font-weight: 800; letter-spacing: 4px; color: #0041a2; }
+
+    .status-card {
+      background: white;
+      border: 1px solid #e0e2ec;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+    .status-text { font-size: 11px; color: #424654; line-height: 1.3; }
+
+    .consent-actions {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+      margin-top: 6px;
+    }
+    .btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-accept { background: #0041a2; color: white; }
+    .btn-accept:hover { background: #0b57d0; }
+    .btn-decline { background: #ba1a1a; color: white; }
+
+    /* Chat Section */
+    .chat-section {
+      flex: 1;
+      background: white;
+      border: 1px solid #e0e2ec;
+      border-radius: 8px;
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-header {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0041a2;
+      padding: 6px 8px;
+      background: #f2f3f7;
+      border-bottom: 1px solid #e0e2ec;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 8px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      max-height: 180px;
+    }
+    .msg {
+      max-width: 85%;
+      padding: 6px 10px;
+      border-radius: 8px;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+    .msg-agent {
+      align-self: flex-end;
+      background: #0041a2;
+      color: white;
+      border-bottom-right-radius: 2px;
+    }
+    .msg-tech {
+      align-self: flex-start;
+      background: #e0e2ec;
+      color: #181c20;
+      border-bottom-left-radius: 2px;
+    }
+    .msg-author { font-size: 9px; font-weight: 700; opacity: 0.85; margin-bottom: 2px; }
+
+    .chat-input-row {
+      display: flex;
+      padding: 6px;
+      gap: 6px;
+      border-top: 1px solid #e0e2ec;
+      background: #f7f9ff;
+    }
+    .chat-input {
+      flex: 1;
+      font-size: 12px;
+      padding: 8px 10px;
+      border: 2px solid #0041a2;
+      border-radius: 6px;
+      outline: none;
+      background: white;
+      color: #181c20;
+    }
+    .chat-input:focus { border-color: #0b57d0; box-shadow: 0 0 0 2px rgba(11,87,208,0.2); }
+    .btn-send {
+      padding: 8px 14px;
+      background: #0041a2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-send:hover { background: #0b57d0; }
+
+    .btn-disconnect {
+      width: 100%;
+      padding: 8px;
+      background: #f2f3f7;
+      color: #ba1a1a;
+      border: 1px solid #e0e2ec;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .btn-disconnect:hover { background: #ffdad6; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand"><span class="dot" id="dot"></span> Homak Remote Agent</div>
+    <span style="font-size: 10px; color: #737785;">v1.0</span>
+  </div>
+
+  <div class="code-box">
+    <div class="code-label">Destek Kodu</div>
+    <div class="code-val" id="code-val">------</div>
+  </div>
+
+  <div class="status-card" id="status-card">
+    <p class="status-text" id="status-text">Sunucuya bağlanılıyor...</p>
+    <div class="consent-actions" id="consent-actions" style="display: none;">
+      <button class="btn btn-accept" id="btn-accept">İzin Ver</button>
+      <button class="btn btn-decline" id="btn-decline">Reddet</button>
+    </div>
+  </div>
+
+  <div class="chat-section">
+    <div class="chat-header">
+      <span>💬 Canlı Sohbet</span>
+      <span id="chat-status" style="font-size: 10px; color: #737785;">Aktif</span>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div style="text-align: center; color: #737785; font-size: 10px; margin-top: 15px;">
+        Teknisyen ile buradan anlık mesajlaşabilirsiniz.
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" class="chat-input" id="chat-input" placeholder="Mesajınızı buraya yazın..." autofocus />
+      <button class="btn-send" id="btn-send">Gönder</button>
+    </div>
+  </div>
+
+  <button class="btn-disconnect" id="btn-disconnect">Oturumu Kapat</button>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    const dot = document.getElementById('dot');
+    const codeVal = document.getElementById('code-val');
+    const statusText = document.getElementById('status-text');
+    const consentActions = document.getElementById('consent-actions');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const btnSend = document.getElementById('btn-send');
+
+    ipcRenderer.on('agent-state', (event, state) => {
+      if (state.code) codeVal.textContent = state.code;
+      if (state.consentPending) {
+        consentActions.style.display = 'flex';
+        statusText.innerHTML = `<strong>${state.technicianName || 'Teknisyen'}</strong> uzaktan bağlanmak istiyor.`;
+        dot.className = 'dot yellow';
+      } else {
+        consentActions.style.display = 'none';
+      }
+      if (state.sessionActive) {
+        statusText.innerHTML = `<span style="color: #34a853; font-weight: bold;">🟢 Uzaktan Ekran Paylaşımı Aktif</span>`;
+        dot.className = 'dot';
+      } else if (!state.consentPending) {
+        statusText.textContent = state.statusText || 'Bağlandı.';
+        dot.className = state.connected ? 'dot' : 'dot red';
+      }
+    });
+
+    ipcRenderer.on('chat-message', (event, msg) => {
+      appendMessage(msg.senderName || 'Teknisyen', msg.text, msg.sender === 'agent');
+    });
+
+    function appendMessage(author, text, isSelf) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `msg ${isSelf ? 'msg-agent' : 'msg-tech'}`;
+      msgDiv.innerHTML = `<div class="msg-author">${author}</div><div>${text}</div>`;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function sendMessage() {
+      const txt = chatInput.value.trim();
+      if (!txt) return;
+      ipcRenderer.send('send-chat-message', txt);
+      appendMessage('Siz', txt, true);
+      chatInput.value = '';
+      chatInput.focus();
+    }
+
+    btnSend.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    chatInput.addEventListener('click', (e) => {
+      e.stopPropagation();
+      chatInput.focus();
+    });
+
+    document.getElementById('btn-accept').addEventListener('click', () => {
+      ipcRenderer.send('user-consent-choice', 'accepted');
+    });
+    document.getElementById('btn-decline').addEventListener('click', () => {
+      ipcRenderer.send('user-consent-choice', 'declined');
+    });
+    document.getElementById('btn-disconnect').addEventListener('click', () => {
+      ipcRenderer.send('user-disconnect');
+    });
+  </script>
+</body>
+</html>

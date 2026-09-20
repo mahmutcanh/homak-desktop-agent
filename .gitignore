@@ -1,0 +1,16 @@
+# Node dependencies
+node_modules/
+dist/
+build/
+*.exe
+
+# Logs and Temp
+*.log
+tmp/
+temp/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

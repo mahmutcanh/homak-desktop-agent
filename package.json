@@ -1,0 +1,30 @@
+{
+  "name": "homak-desktop-agent",
+  "version": "1.0.0",
+  "description": "Homak Remote Desktop Support Agent",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.homak.desktopagent",
+    "productName": "Homak Desktop Agent",
+    "win": {
+      "target": "portable"
+    },
+    "portable": {
+      "artifactName": "HomakDesktopAgent.exe"
+    },
+    "files": [
+      "**/*"
+    ]
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "electron": "^29.1.1",
+    "electron-builder": "^24.13.3"
+  }
+}
