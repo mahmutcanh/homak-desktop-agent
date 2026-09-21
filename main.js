@@ -140,8 +140,23 @@ function startInputSimulator() {
         + "public static extern void mouse_event(int dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);\r\n"
         + "[DllImport(\"user32.dll\")]\r\n"
         + "public static extern bool SetCursorPos(int X, int Y);\r\n"
+        + "[DllImport(\"user32.dll\")]\r\n"
+        + "public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);\r\n"
+        + "[DllImport(\"user32.dll\")]\r\n"
+        + "public static extern bool SetWindowDisplayAffinity(IntPtr hWnd, uint dwAffinity);\r\n"
         + "'@\r\n"
         + "$u = Add-Type -MemberDefinition $sig -Name 'U32' -Namespace 'Win32' -PassThru\r\n"
+        + "$vkMap = @{\r\n"
+        + "  'ctrl'=[byte]0x11; 'control'=[byte]0x11; 'shift'=[byte]0x10; 'alt'=[byte]0x12; 'menu'=[byte]0x12;\r\n"
+        + "  'win'=[byte]0x5B; 'lwin'=[byte]0x5B; 'rwin'=[byte]0x5C; 'esc'=[byte]0x1B; 'escape'=[byte]0x1B;\r\n"
+        + "  'tab'=[byte]0x09; 'enter'=[byte]0x0D; 'return'=[byte]0x0D; 'backspace'=[byte]0x08;\r\n"
+        + "  'delete'=[byte]0x2E; 'del'=[byte]0x2E; 'space'=[byte]0x20;\r\n"
+        + "  'up'=[byte]0x26; 'down'=[byte]0x28; 'left'=[byte]0x25; 'right'=[byte]0x27;\r\n"
+        + "  'home'=[byte]0x24; 'end'=[byte]0x23; 'pageup'=[byte]0x21; 'pagedown'=[byte]0x22;\r\n"
+        + "  'f1'=[byte]0x70; 'f2'=[byte]0x71; 'f3'=[byte]0x72; 'f4'=[byte]0x73; 'f5'=[byte]0x74; 'f6'=[byte]0x75;\r\n"
+        + "  'f7'=[byte]0x76; 'f8'=[byte]0x77; 'f9'=[byte]0x78; 'f10'=[byte]0x79; 'f11'=[byte]0x7A; 'f12'=[byte]0x7B;\r\n"
+        + "  'a'=[byte]0x41; 'c'=[byte]0x43; 'v'=[byte]0x56; 'x'=[byte]0x58; 'z'=[byte]0x5A; 'd'=[byte]0x44; 'e'=[byte]0x45; 'r'=[byte]0x52\r\n"
+        + "}\r\n"
         + "while ($true) {\r\n"
         + "  $line = [Console]::In.ReadLine()\r\n"
         + "  if ($null -eq $line) { break }\r\n"
@@ -160,6 +175,68 @@ function startInputSimulator() {
         + "    elseif ($line -eq 'c right down') { $u::mouse_event(0x0008,0,0,0,0) }\r\n"
         + "    elseif ($line -eq 'c right up')   { $u::mouse_event(0x0010,0,0,0,0) }\r\n"
         + "    elseif ($line -match '^w (-?\\d+)') { $u::mouse_event(0x0800,0,0,[int]$Matches[1],0) }\r\n"
+        + "    elseif ($line -match '^kd (\\w+)') {\r\n"
+        + "      $k = $Matches[1].ToLower()\r\n"
+        + "      if ($vkMap.ContainsKey($k)) { $u::keybd_event($vkMap[$k], 0, 0, [UIntPtr]::Zero) }\r\n"
+        + "    }\r\n"
+        + "    elseif ($line -match '^ku (\\w+)') {\r\n"
+        + "      $k = $Matches[1].ToLower()\r\n"
+        + "      if ($vkMap.ContainsKey($k)) { $u::keybd_event($vkMap[$k], 0, 2, [UIntPtr]::Zero) }\r\n"
+        + "    }\r\n"
+        + "    elseif ($line -match '^combo (.+)') {\r\n"
+        + "      $c = $Matches[1].ToLower().Trim()\r\n"
+        + "      if ($c -eq 'ctrl-alt-esc' -or $c -eq 'ctrl-shift-esc') {\r\n"
+        + "        $u::keybd_event([byte]0x11, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x10, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x1B, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x1B, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x10, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x11, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "      } elseif ($c -eq 'alt-tab') {\r\n"
+        + "        $u::keybd_event([byte]0x12, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x09, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x09, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x12, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "      } elseif ($c -eq 'alt-f4') {\r\n"
+        + "        $u::keybd_event([byte]0x12, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x73, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x73, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x12, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "      } elseif ($c -eq 'win-d') {\r\n"
+        + "        $u::keybd_event([byte]0x5B, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x44, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x44, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x5B, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "      } elseif ($c -eq 'win-e') {\r\n"
+        + "        $u::keybd_event([byte]0x5B, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x45, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x45, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x5B, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "      } elseif ($c -eq 'win-r') {\r\n"
+        + "        $u::keybd_event([byte]0x5B, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x52, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x52, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x5B, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "      } elseif ($c -eq 'ctrl-a') {\r\n"
+        + "        $u::keybd_event([byte]0x11, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x41, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x41, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x11, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "      } elseif ($c -eq 'ctrl-c') {\r\n"
+        + "        $u::keybd_event([byte]0x11, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x43, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x43, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x11, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "      } elseif ($c -eq 'ctrl-v') {\r\n"
+        + "        $u::keybd_event([byte]0x11, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x56, 0, 0, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x56, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "        $u::keybd_event([byte]0x11, 0, 2, [UIntPtr]::Zero)\r\n"
+        + "      }\r\n"
+        + "    }\r\n"
+        + "    elseif ($line -match '^affinity (\\d+)') {\r\n"
+        + "      [void]$u::SetWindowDisplayAffinity([IntPtr][int64]$Matches[1], [uint32]0x00000011)\r\n"
+        + "    }\r\n"
         + "    elseif ($line -match '^k (.+)')   { [System.Windows.Forms.SendKeys]::SendWait($Matches[1]) }\r\n"
         + "  } catch {}\r\n"
         + "}\r\n";
@@ -244,12 +321,30 @@ function togglePrivacyScreen(enable) {
             backgroundColor: '#020617',
             webPreferences: { contextIsolation: false }
         });
+
+        try {
+            privacyWindow.setContentProtection(true);
+            const handleBuf = privacyWindow.getNativeWindowHandle();
+            let hwnd = 0;
+            if (process.arch === 'x64') {
+                hwnd = Number(handleBuf.readBigInt64LE(0));
+            } else {
+                hwnd = handleBuf.readInt32LE(0);
+            }
+            if (psProcess && psProcess.stdin) {
+                psProcess.stdin.write(`affinity ${hwnd}\r\n`);
+            }
+        } catch (e) {
+            log('Privacy window affinity error: ' + e.message);
+        }
+
         privacyWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`
             <html>
-                <body style="background:#020617;color:#38bdf8;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;">
-                    <div style="font-size:48px;margin-bottom:16px;">🛡️</div>
-                    <h1 style="margin:0;font-size:24px;">Homak Remote Secure Maintenance Mode</h1>
-                    <p style="color:#94a3b8;font-size:14px;margin-top:8px;">Teknisyeniniz şu anda bilgisayarınızda bakım yapmaktadır. Ekran geçici olarak gizlendi.</p>
+                <body style="background:#020617;color:#38bdf8;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;user-select:none;">
+                    <div style="font-size:56px;margin-bottom:16px;">🛡️</div>
+                    <h1 style="margin:0;font-size:24px;color:#ffffff;">Homak Güvenli Bakım Modu</h1>
+                    <p style="color:#94a3b8;font-size:14px;margin-top:10px;">Teknisyeniniz şu anda bilgisayarınızda uzaktan bakım yapmaktadır.</p>
+                    <p style="color:#64748b;font-size:12px;margin-top:4px;">Gizliliğiniz için yerel ekranınız geçici olarak karartılmıştır.</p>
                 </body>
             </html>
         `));
@@ -442,6 +537,15 @@ function initSocketConnection(supportCode) {
                 if (isInputBlocked) return;
                 const delta = typeof data.delta === 'number' ? data.delta : 0;
                 psProcess.stdin.write('w ' + delta + '\r\n');
+            } else if (data.action === 'keydown') {
+                if (isInputBlocked) return;
+                psProcess.stdin.write('kd ' + (data.key || '') + '\r\n');
+            } else if (data.action === 'keyup') {
+                if (isInputBlocked) return;
+                psProcess.stdin.write('ku ' + (data.key || '') + '\r\n');
+            } else if (data.action === 'combo') {
+                if (isInputBlocked) return;
+                psProcess.stdin.write('combo ' + (data.combo || '') + '\r\n');
             } else if (data.action === 'keypress') {
                 if (isInputBlocked) return;
                 psProcess.stdin.write('k ' + data.key + '\r\n');
