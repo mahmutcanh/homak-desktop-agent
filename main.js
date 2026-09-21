@@ -749,21 +749,20 @@ function initSocketConnection(supportCode) {
     socket.on('remote:switch-display', async (data) => {
         if (data.sessionId !== currentSessionId) return;
         const targetIdx = typeof data.displayIndex === 'number' ? data.displayIndex : 0;
-        const displays = screen.getAllDisplays();
-        if (targetIdx >= 0 && targetIdx < displays.length) {
-            currentDisplayIndex = targetIdx;
-            log(`Switching active display to Monitör ${targetIdx + 1} (${displays[targetIdx].id})`);
-            try {
-                const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } });
-                const source = sources[targetIdx] || sources[0];
-                if (rtcWindow && !rtcWindow.isDestroyed()) {
-                    rtcWindow.webContents.send('switch-source', { sourceId: source.id });
-                }
-            } catch(e) {
-                log('Error switching display source: ' + e.message);
+        currentDisplayIndex = targetIdx;
+        log(`Requested switch to displayIndex: ${targetIdx}`);
+        try {
+            const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } });
+            log(`desktopCapturer sources: ${sources.length} sources found`);
+            const source = sources[targetIdx] || sources[0];
+            if (source && rtcWindow && !rtcWindow.isDestroyed()) {
+                log(`Switching active display stream to: ${source.name} (${source.id})`);
+                rtcWindow.webContents.send('switch-source', { sourceId: source.id });
             }
-            sendDisplaysInfo();
+        } catch(e) {
+            log('Error switching display source: ' + e.message);
         }
+        sendDisplaysInfo();
     });
 
 
