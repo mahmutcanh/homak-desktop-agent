@@ -15,6 +15,7 @@
       padding: 12px;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-app-region: no-drag;
     }
     input, textarea, .chat-messages, .msg {
       user-select: text !important;
@@ -280,10 +281,19 @@
       chatInput.focus();
     });
 
-    document.getElementById('btn-accept').addEventListener('click', () => {
+    document.getElementById('btn-accept').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Accept clicked');
+      consentActions.style.display = 'none';
+      statusText.innerHTML = '<span style="color: #0041a2; font-weight: bold;">⏳ Bağlantı başlatılıyor...</span>';
       ipcRenderer.send('user-consent-choice', 'accepted');
     });
-    document.getElementById('btn-decline').addEventListener('click', () => {
+    document.getElementById('btn-decline').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Decline clicked');
+      consentActions.style.display = 'none';
       ipcRenderer.send('user-consent-choice', 'declined');
     });
     document.getElementById('btn-disconnect').addEventListener('click', () => {
