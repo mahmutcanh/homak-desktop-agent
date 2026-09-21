@@ -29,6 +29,14 @@ let selfDestructTriggered = false;
 
 const SERVER_URL = process.env.SUPPORT_API_URL || 'https://support-api.homaklab.com';
 
+process.on('uncaughtException', (err) => {
+    log('Uncaught Exception: ' + (err ? err.stack || err.message : err));
+});
+
+process.on('unhandledRejection', (reason) => {
+    log('Unhandled Rejection: ' + (reason ? reason.stack || reason.message : reason));
+});
+
 function log(msg) {
     console.log(`[HomakAgent ${new Date().toISOString()}] ${msg}`);
 }
@@ -232,12 +240,15 @@ function startScreenCaptureWindow(sessionId) {
 
     log('Opening hidden screen capture renderer window...');
     rtcWindow = new BrowserWindow({
+        width: 320,
+        height: 180,
         show: false,
-        width: 1280,
-        height: 720,
+        focusable: false,
+        skipTaskbar: true,
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            backgroundThrottling: false
         }
     });
 
