@@ -2,7 +2,7 @@ const { ipcRenderer } = require('electron');
 
 const video = document.getElementById('v');
 const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { alpha: false });
 
 let captureInterval = null;
 let streaming = false;
@@ -22,9 +22,7 @@ ipcRenderer.on('start-capture', async (event, data) => {
                 mandatory: {
                     chromeMediaSource: 'desktop',
                     chromeMediaSourceId: sourceId,
-                    minWidth: 1280,
                     maxWidth: 1920,
-                    minHeight: 720,
                     maxHeight: 1080
                 }
             }
@@ -35,7 +33,7 @@ ipcRenderer.on('start-capture', async (event, data) => {
             try {
                 await video.play();
             } catch(e) {
-                console.error(e);
+                console.error('video.play error:', e);
             }
         };
         try {
@@ -45,21 +43,25 @@ ipcRenderer.on('start-capture', async (event, data) => {
         streaming = true;
         ipcRenderer.send('rd-ready', { sessionId });
 
+        if (captureInterval) clearInterval(captureInterval);
+
         captureInterval = setInterval(() => {
             if (!streaming) return;
             try {
-                if (video.readyState >= 2) {
-                    canvas.width = video.videoWidth || 1280;
-                    canvas.height = video.videoHeight || 720;
+                if (video.videoWidth > 0 && video.videoHeight > 0) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
                     const base64 = dataUrl.split(',')[1];
-                    ipcRenderer.send('rd-frame', {
-                        sessionId,
-                        frame: base64,
-                        width: canvas.width,
-                        height: canvas.height
-                    });
+                    if (base64) {
+                        ipcRenderer.send('rd-frame', {
+                            sessionId,
+                            frame: base64,
+                            width: canvas.width,
+                            height: canvas.height
+                        });
+                    }
                 }
             } catch(e) {
                 ipcRenderer.send('rd-error', { sessionId, error: e.message });
@@ -72,8 +74,12 @@ ipcRenderer.on('start-capture', async (event, data) => {
 
 ipcRenderer.on('rd-stop', () => {
     streaming = false;
-    if (captureInterval) clearInterval(captureInterval);
+    if (captureInterval) {
+        clearInterval(captureInterval);
+        captureInterval = null;
+    }
     if (video.srcObject) {
         video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
     }
 });

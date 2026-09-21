@@ -13,6 +13,8 @@ let currentSupportCode = null;
 let currentSessionId = null;
 let clipboardInterval = null;
 let lastClipboardText = '';
+let agentWindow = null;
+let rtcWindow = null;
 
 let agentState = {
     code: '------',
@@ -225,44 +227,44 @@ function togglePrivacyScreen(enable) {
     }
 }
 
-function stopInputSimulator() {
-    if (psProcess && !psProcess.killed) {
-        psProcess.kill();
-        psProcess = null;
-    }
-}
-
 function startScreenCaptureWindow(sessionId) {
     if (rtcWindow) {
         try { rtcWindow.close(); } catch(e) {}
         rtcWindow = null;
     }
 
-    log('Opening screen capture renderer window...');
-    rtcWindow = new BrowserWindow({
-        width: 320,
-        height: 180,
-        show: true,
-        x: -2000,
-        y: -2000,
-        focusable: false,
-        skipTaskbar: true,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            backgroundThrottling: false
-        }
-    });
+    log('Opening screen capture renderer window for session ' + sessionId);
+    try {
+        rtcWindow = new BrowserWindow({
+            width: 320,
+            height: 180,
+            show: true,
+            x: -2000,
+            y: -2000,
+            focusable: false,
+            skipTaskbar: true,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+                backgroundThrottling: false
+            }
+        });
 
-    rtcWindow.loadFile(path.join(__dirname, 'remote.html'));
+        rtcWindow.loadFile(path.join(__dirname, 'remote.html'));
 
-    rtcWindow.webContents.on('did-finish-load', () => {
-        rtcWindow.webContents.send('start-capture', { sessionId });
-    });
+        rtcWindow.webContents.on('did-finish-load', () => {
+            log('Screen capture renderer loaded. Sending start-capture for session ' + sessionId);
+            if (rtcWindow && !rtcWindow.isDestroyed()) {
+                rtcWindow.webContents.send('start-capture', { sessionId });
+            }
+        });
 
-    rtcWindow.on('closed', () => {
-        rtcWindow = null;
-    });
+        rtcWindow.on('closed', () => {
+            rtcWindow = null;
+        });
+    } catch(err) {
+        log('Error creating screen capture window: ' + (err ? err.stack || err.message : err));
+    }
 }
 
 function stopScreenCaptureWindow() {
@@ -299,6 +301,8 @@ ipcMain.on('rd-ready', (event, data) => {
 
 ipcMain.on('rd-error', (event, data) => {
     log('Renderer screen capture error: ' + data.error);
+    agentState.statusText = 'Ekran yakalama hatası: ' + data.error;
+    updateAgentUi();
 });
 
 function initSocketConnection(supportCode) {
@@ -470,17 +474,22 @@ function createAgentWindow() {
 }
 
 ipcMain.on('user-consent-choice', (event, choice) => {
-    log(`User consent choice: ${choice}`);
+    log(`User consent choice: ${choice}, currentSessionId: ${currentSessionId}`);
     agentState.consentPending = false;
 
-    if (choice === 'accepted' && currentSessionId) {
+    if (choice === 'accepted') {
+        hasBeenAccepted = true;
         agentState.sessionActive = true;
+        agentState.statusText = '🟢 Ekran Paylaşımı Aktif';
         startInputSimulator();
         startClipboardSync();
         sendSystemInfo();
-        startScreenCaptureWindow(currentSessionId);
+        if (currentSessionId) {
+            startScreenCaptureWindow(currentSessionId);
+        }
     } else {
         agentState.sessionActive = false;
+        agentState.statusText = 'Bağlantı reddedildi.';
     }
     updateAgentUi();
 

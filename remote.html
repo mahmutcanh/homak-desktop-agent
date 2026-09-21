@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Remote Renderer</title>
 </head>
-<body style="background: black; margin: 0; padding: 0;">
-    <video id="v" style="display: none;"></video>
+<body style="background: black; margin: 0; padding: 0; overflow: hidden;">
+    <video id="v" autoplay playsinline muted style="position: absolute; top: 0; left: 0; width: 320px; height: 180px; opacity: 0.05; pointer-events: none;"></video>
     <canvas id="c" style="display: none;"></canvas>
     <script src="remote-renderer.js"></script>
 </body>

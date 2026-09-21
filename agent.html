@@ -284,9 +284,9 @@
     document.getElementById('btn-accept').addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      console.log('Accept clicked');
       consentActions.style.display = 'none';
-      statusText.innerHTML = '<span style="color: #0041a2; font-weight: bold;">⏳ Bağlantı başlatılıyor...</span>';
+      statusText.innerHTML = '<span style="color: #34a853; font-weight: bold;">🟢 Uzaktan Ekran Paylaşımı Aktif</span>';
+      dot.className = 'dot';
       ipcRenderer.send('user-consent-choice', 'accepted');
     });
     document.getElementById('btn-decline').addEventListener('click', (e) => {
