@@ -323,7 +323,7 @@ function togglePrivacyScreen(enable) {
         });
 
         try {
-            privacyWindow.setContentProtection(true);
+            // privacyWindow.setContentProtection(true); - excluded to avoid capture blackout
             const handleBuf = privacyWindow.getNativeWindowHandle();
             let hwnd = 0;
             if (process.arch === 'x64') {
@@ -591,6 +591,22 @@ function initSocketConnection(supportCode) {
     socket.on('chat:message', (data) => {
         log(`Received chat message from ${data.senderName}: ${data.text}`);
         if (agentWindow && !agentWindow.isDestroyed()) {
+            try {
+                if (agentWindow.isMinimized()) agentWindow.restore();
+                agentWindow.show();
+                agentWindow.focus();
+                agentWindow.setAlwaysOnTop(true);
+                setTimeout(() => {
+                    try {
+                        if (agentWindow && !agentWindow.isDestroyed()) {
+                            agentWindow.setAlwaysOnTop(false);
+                        }
+                    } catch(e) {}
+                }, 4000);
+                agentWindow.flashFrame(true);
+            } catch(e) {
+                log('Window focus error on chat: ' + e.message);
+            }
             agentWindow.webContents.send('chat-message', data);
         }
     });

@@ -14,6 +14,7 @@
       --primary: #0284c7;
       --primary-light: #38bdf8;
       --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.4);
       --amber: #f59e0b;
       --rose: #ef4444;
       --text-main: #f1f5f9;
@@ -40,7 +41,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
+      padding: 10px 14px;
       background: var(--bg-surface);
       border-bottom: 1px solid var(--border-color);
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -117,7 +118,7 @@
       display: none;
       background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), rgba(2, 132, 199, 0.15));
       border-bottom: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 8px 16px;
+      padding: 7px 14px;
       align-items: center;
       justify-content: space-between;
     }
@@ -146,9 +147,9 @@
       display: none;
       background: linear-gradient(135deg, #1e1b4b, #0f172a);
       border-bottom: 2px solid #818cf8;
-      padding: 14px 16px;
+      padding: 12px 14px;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.5);
       animation: slide-down 0.3s ease-out;
     }
@@ -161,36 +162,36 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       color: #c7d2fe;
     }
     .consent-text {
-      font-size: 12px;
+      font-size: 11px;
       color: #e0e7ff;
       line-height: 1.4;
     }
     .consent-actions {
       display: flex;
       gap: 8px;
-      margin-top: 4px;
+      margin-top: 2px;
     }
     .btn-consent-accept {
       flex: 1;
-      padding: 8px 14px;
+      padding: 8px 12px;
       background: linear-gradient(135deg, #10b981, #059669);
       color: white;
       border: none;
       border-radius: 8px;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
       transition: all 0.15s;
     }
     .btn-consent-accept:hover { filter: brightness(1.1); transform: translateY(-1px); }
     .btn-consent-decline {
-      padding: 8px 14px;
+      padding: 8px 12px;
       background: rgba(239, 68, 68, 0.15);
       color: #fca5a5;
       border: 1px solid rgba(239, 68, 68, 0.4);
@@ -216,7 +217,7 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 9px 6px;
+      padding: 8px 6px;
       border: none;
       background: transparent;
       color: var(--text-muted);
@@ -257,7 +258,7 @@
     .main-content {
       flex: 1;
       overflow-y: auto;
-      padding: 14px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
     }
@@ -275,184 +276,7 @@
     }
 
     /* ============================================================
-       TAB 1: BAĞLANTI & KOD
-       ============================================================ */
-    .connection-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      height: 100%;
-    }
-    .hero-card {
-      background: linear-gradient(135deg, var(--bg-card), #0c182b);
-      border: 1px solid var(--border-color);
-      border-radius: 14px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-      position: relative;
-      overflow: hidden;
-    }
-    .hero-card::before {
-      content: "";
-      position: absolute;
-      top: -50px;
-      width: 140px;
-      height: 140px;
-      background: radial-gradient(circle, rgba(2, 132, 199, 0.25) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .card-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      font-weight: 800;
-      color: var(--primary-light);
-    }
-    .code-box {
-      background: #081120;
-      border: 2px dashed #0284c7;
-      border-radius: 12px;
-      padding: 12px 24px;
-      font-size: 32px;
-      font-weight: 900;
-      letter-spacing: 5px;
-      color: #38bdf8;
-      text-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
-      cursor: pointer;
-      transition: all 0.2s;
-      width: 100%;
-      max-width: 280px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .code-box:hover {
-      border-color: #38bdf8;
-      background: #0b172a;
-      transform: scale(1.02);
-    }
-    .code-helper {
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.4;
-      max-width: 320px;
-    }
-    .btn-copy {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(2, 132, 199, 0.15);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: var(--primary-light);
-      padding: 7px 16px;
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .btn-copy:hover {
-      background: rgba(2, 132, 199, 0.3);
-      color: #ffffff;
-      border-color: var(--primary-light);
-    }
-    .btn-copy.copied {
-      background: rgba(16, 185, 129, 0.2);
-      border-color: var(--emerald);
-      color: #6ee7b7;
-    }
-
-    /* Quick Specs Cards in Connection Tab */
-    .quick-specs-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .spec-item {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-    .spec-item-title {
-      font-size: 10px;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--text-dim);
-    }
-    .spec-item-val {
-      font-size: 12px;
-      font-weight: 700;
-      color: #ffffff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* Manual Code Toggle Bar */
-    .manual-toggle-area {
-      margin-top: auto;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .manual-toggle-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-muted);
-    }
-    .manual-toggle-header:hover { color: #ffffff; }
-    .manual-input-box {
-      display: none;
-      gap: 6px;
-      margin-top: 4px;
-    }
-    .manual-input-box.show { display: flex; }
-    .manual-input {
-      flex: 1;
-      background: #081120;
-      border: 1px solid var(--border-color);
-      border-radius: 7px;
-      padding: 8px 12px;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 2px;
-      text-align: center;
-      color: #38bdf8;
-      outline: none;
-    }
-    .manual-input:focus { border-color: var(--primary-light); }
-    .btn-manual-submit {
-      padding: 8px 14px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 7px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .btn-manual-submit:hover { background: #0369a1; }
-
-    /* ============================================================
-       TAB 2: CANLI SOHBET
+       TAB: SOHBET (CHAT) - DEFAULT ACTIVE
        ============================================================ */
     .chat-panel {
       display: flex;
@@ -462,10 +286,11 @@
       border: 1px solid var(--border-color);
       border-radius: 12px;
       overflow: hidden;
+      position: relative;
     }
     .chat-header {
-      padding: 10px 14px;
-      background: rgba(0,0,0,0.2);
+      padding: 9px 12px;
+      background: rgba(0,0,0,0.25);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
@@ -474,18 +299,168 @@
       font-weight: 700;
       color: var(--text-muted);
     }
-    .chat-feed {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px;
+
+    /* Prominent Consent / Accept Card at Top of Chat */
+    .chat-consent-box {
+      margin: 10px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, #0d1b30, #132440);
+      border: 1px solid #1e3a66;
+      border-radius: 12px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .chat-consent-box.pending-pulse {
+      border-color: #38bdf8;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+      animation: pulse-glow 2s infinite alternate;
+    }
+    @keyframes pulse-glow {
+      0% { box-shadow: 0 0 12px rgba(56, 189, 248, 0.2); }
+      100% { box-shadow: 0 0 24px rgba(56, 189, 248, 0.5); }
+    }
+
+    .chat-consent-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chat-code-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #081120;
+      border: 1px solid #0284c7;
+      padding: 3px 9px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: monospace;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+    .chat-status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+    }
+    .chat-status-pill .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f59e0b;
+    }
+    .chat-status-pill .dot.green {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    .chat-consent-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chat-consent-icon {
+      font-size: 24px;
+      background: rgba(2, 132, 199, 0.15);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .chat-consent-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .chat-consent-heading {
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .chat-consent-sub {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.3;
+    }
+
+    /* Big Green Accept Button in Chat */
+    .chat-consent-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-chat-accept-main {
+      flex: 1;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+      transition: all 0.15s;
+    }
+    .btn-chat-accept-main:hover {
+      filter: brightness(1.12);
+      transform: translateY(-1px);
+    }
+    .btn-chat-decline-main {
+      padding: 10px 14px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-chat-decline-main:hover {
+      background: rgba(239, 68, 68, 0.3);
+      color: white;
+    }
+
+    /* Connected Active Bar in Consent Box */
+    .chat-connected-strip {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: #6ee7b7;
+      font-weight: 700;
+    }
+
+    .chat-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       user-select: text !important;
       -webkit-user-select: text !important;
     }
     .chat-msg {
-      max-width: 82%;
+      max-width: 84%;
       padding: 8px 12px;
       border-radius: 12px;
       font-size: 12px;
@@ -555,7 +530,278 @@
     .btn-chat-send:hover { background: #0369a1; }
 
     /* ============================================================
-       TAB 3: SESLİ GÖRÜŞME
+       HIGH-VISIBILITY ALERT NOTIFICATION MODAL
+       ============================================================ */
+    .agent-alert-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: alert-fade-in 0.2s ease-out;
+    }
+    @keyframes alert-fade-in {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .agent-alert-card {
+      background: linear-gradient(145deg, #131e33, #0b1322);
+      border: 2px solid #38bdf8;
+      box-shadow: 0 0 35px rgba(56, 189, 248, 0.45), 0 10px 30px rgba(0,0,0,0.8);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 360px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+      position: relative;
+    }
+    .agent-alert-icon-wrap {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: rgba(2, 132, 199, 0.2);
+      border: 2px solid #38bdf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.6);
+      animation: bell-ring 1s infinite ease-in-out alternate;
+    }
+    @keyframes bell-ring {
+      0% { transform: rotate(-10deg); }
+      100% { transform: rotate(10deg); }
+    }
+    .agent-alert-badge {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #38bdf8;
+    }
+    .agent-alert-sender {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .agent-alert-message {
+      font-size: 13px;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 12px 14px;
+      width: 100%;
+      line-height: 1.5;
+      word-break: break-word;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+    .btn-agent-alert-confirm {
+      width: 100%;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+      transition: all 0.15s;
+    }
+    .btn-agent-alert-confirm:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
+    /* ============================================================
+       TAB: BAĞLANTI & KOD
+       ============================================================ */
+    .connection-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
+    }
+    .hero-card {
+      background: linear-gradient(135deg, var(--bg-card), #0c182b);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      top: -50px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(2, 132, 199, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .card-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 800;
+      color: var(--primary-light);
+    }
+    .code-box {
+      background: #081120;
+      border: 2px dashed #0284c7;
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #38bdf8;
+      text-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      max-width: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .code-box:hover {
+      border-color: #38bdf8;
+      background: #0b172a;
+      transform: scale(1.02);
+    }
+    .code-helper {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      max-width: 300px;
+    }
+    .btn-copy {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(2, 132, 199, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--primary-light);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-copy:hover {
+      background: rgba(2, 132, 199, 0.3);
+      color: #ffffff;
+      border-color: var(--primary-light);
+    }
+    .btn-copy.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--emerald);
+      color: #6ee7b7;
+    }
+
+    /* Quick Specs Cards in Connection Tab */
+    .quick-specs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .spec-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .spec-item-title {
+      font-size: 9px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+    .spec-item-val {
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Manual Code Toggle Bar */
+    .manual-toggle-area {
+      margin-top: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 9px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .manual-toggle-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .manual-toggle-header:hover { color: #ffffff; }
+    .manual-input-box {
+      display: none;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .manual-input-box.show { display: flex; }
+    .manual-input {
+      flex: 1;
+      background: #081120;
+      border: 1px solid var(--border-color);
+      border-radius: 7px;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-align: center;
+      color: #38bdf8;
+      outline: none;
+    }
+    .manual-input:focus { border-color: var(--primary-light); }
+    .btn-manual-submit {
+      padding: 7px 12px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-manual-submit:hover { background: #0369a1; }
+
+    /* ============================================================
+       TAB: SESLİ GÖRÜŞME
        ============================================================ */
     .voice-panel {
       display: flex;
@@ -563,8 +809,8 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      gap: 16px;
-      padding: 16px;
+      gap: 14px;
+      padding: 14px;
       height: 100%;
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -572,22 +818,22 @@
     }
     .voice-avatar-box {
       position: relative;
-      width: 80px;
-      height: 80px;
+      width: 72px;
+      height: 72px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .voice-avatar {
-      width: 72px;
-      height: 72px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       background: linear-gradient(135deg, #1e293b, #0f172a);
       border: 3px solid var(--primary-light);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
+      font-size: 26px;
       box-shadow: 0 0 24px rgba(56, 189, 248, 0.3);
       transition: all 0.3s ease;
       z-index: 2;
@@ -613,39 +859,39 @@
     }
 
     .voice-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 800;
       color: #ffffff;
     }
     .voice-desc {
       font-size: 11px;
       color: var(--text-muted);
-      max-width: 280px;
+      max-width: 260px;
       line-height: 1.4;
     }
 
     /* Live Mic Level Bar */
     .mic-meter-box {
       width: 100%;
-      max-width: 260px;
+      max-width: 240px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 4px;
       background: #091222;
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 7px 10px;
     }
     .mic-meter-header {
       display: flex;
       justify-content: space-between;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
       color: var(--text-dim);
     }
     .mic-meter-bar-track {
       width: 100%;
-      height: 8px;
+      height: 7px;
       background: #152238;
       border-radius: 4px;
       overflow: hidden;
@@ -661,24 +907,24 @@
 
     .voice-controls-row {
       display: flex;
-      gap: 10px;
-      margin-top: 6px;
+      gap: 8px;
+      margin-top: 4px;
     }
     .btn-voice-toggle {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-      padding: 8px 14px;
-      border-radius: 10px;
+      gap: 3px;
+      padding: 7px 12px;
+      border-radius: 9px;
       background: #091222;
       border: 1px solid var(--border-color);
       color: var(--text-main);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.15s;
-      min-width: 76px;
+      min-width: 70px;
     }
     .btn-voice-toggle:hover {
       background: #111e33;
@@ -690,7 +936,7 @@
       color: #fca5a5;
     }
     .btn-call-action {
-      padding: 10px 24px;
+      padding: 9px 20px;
       border-radius: 10px;
       background: linear-gradient(135deg, #10b981, #059669);
       color: white;
@@ -714,37 +960,37 @@
     }
 
     /* ============================================================
-       TAB 4: SİSTEM & DONANIM
+       TAB: SİSTEM & DONANIM
        ============================================================ */
     .sys-panel {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       height: 100%;
     }
     .sys-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 10px;
-      padding: 12px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
     .sys-card-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--primary-light);
       border-bottom: 1px solid rgba(255,255,255,0.06);
-      padding-bottom: 4px;
+      padding-bottom: 3px;
     }
     .sys-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 12px;
+      font-size: 11px;
     }
     .sys-row-lbl { color: var(--text-muted); }
     .sys-row-val { font-weight: 700; color: #ffffff; text-align: right; }
@@ -754,14 +1000,14 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
+      padding: 8px 14px;
       background: var(--bg-surface);
       border-top: 1px solid var(--border-color);
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-dim);
     }
     .btn-disconnect {
-      padding: 6px 14px;
+      padding: 5px 12px;
       background: rgba(239, 68, 68, 0.15);
       border: 1px solid rgba(239, 68, 68, 0.3);
       color: #fca5a5;
@@ -797,15 +1043,15 @@
   <div class="session-active-bar" id="session-active-bar">
     <div class="session-info-left">
       <span>🟢 Canlı Oturum:</span>
-      <span id="active-technician-title" style="color:#38bdf8;">Mahmut Homak</span>
+      <span id="active-technician-title" style="color:#38bdf8;">Teknisyen</span>
     </div>
     <div style="display:flex; align-items:center; gap:8px;">
       <div class="session-timer" id="session-timer">00:00</div>
-      <button class="btn-disconnect" id="btn-end-session" style="padding:4px 10px; font-size:10px;">Sonlandır</button>
+      <button class="btn-disconnect" id="btn-end-session" style="padding:3px 8px; font-size:10px;">Sonlandır</button>
     </div>
   </div>
 
-  <!-- Incoming Connection Consent Request -->
+  <!-- Incoming Connection Consent Request Banner -->
   <div class="consent-banner" id="consent-banner">
     <div class="consent-title">
       <span>🛡️</span>
@@ -820,14 +1066,14 @@
     </div>
   </div>
 
-  <!-- Tab Navigation -->
+  <!-- Tab Navigation (Chat is Active by Default) -->
   <div class="nav-tabs">
-    <button class="nav-tab active" id="tab-btn-conn">
-      <span>🔑 Bağlantı</span>
-    </button>
-    <button class="nav-tab" id="tab-btn-chat">
+    <button class="nav-tab active" id="tab-btn-chat">
       <span>💬 Sohbet</span>
       <span class="tab-badge" id="chat-badge" style="display:none;">0</span>
+    </button>
+    <button class="nav-tab" id="tab-btn-conn">
+      <span>🔑 Bağlantı Kodu</span>
     </button>
     <button class="nav-tab" id="tab-btn-voice">
       <span>🎙️ Sesli İletişim</span>
@@ -842,9 +1088,78 @@
   <div class="main-content">
 
     <!-- ========================================== -->
-    <!-- TAB 1: BAĞLANTI & KOD (Connection)        -->
+    <!-- TAB 1 (DEFAULT ACTIVE): CANLI SOHBET      -->
     <!-- ========================================== -->
-    <div class="tab-panel active" id="panel-conn">
+    <div class="tab-panel active" id="panel-chat">
+      <div class="chat-panel">
+        
+        <div class="chat-header">
+          <span id="chat-header-title">💬 Canlı Destek Sohbeti</span>
+          <span style="font-size:10px; color:#10b981;">● Güvenli Kanal</span>
+        </div>
+
+        <!-- Prominent Consent & Accept Card Inside Chat Screen -->
+        <div class="chat-consent-box" id="chat-consent-box">
+          <div class="chat-consent-top">
+            <div class="chat-code-pill">
+              <span style="color:#94a3b8; font-size:10px;">PIN:</span>
+              <span id="chat-pin-code">------</span>
+            </div>
+            <div class="chat-status-pill">
+              <span class="dot" id="chat-status-dot"></span>
+              <span id="chat-status-text">Teknisyen Bekleniyor</span>
+            </div>
+          </div>
+
+          <div class="chat-consent-info">
+            <div class="chat-consent-icon">🛡️</div>
+            <div class="chat-consent-texts">
+              <div class="chat-consent-heading" id="chat-consent-title">Uzaktan Masaüstü Bağlantısı</div>
+              <div class="chat-consent-sub" id="chat-consent-desc">Teknisyeninizin bilgisayarınızı güvenle yönetebilmesi için bağlantıyı kabul edin.</div>
+            </div>
+          </div>
+
+          <!-- Buttons: Big Accept & Decline -->
+          <div class="chat-consent-buttons" id="chat-consent-buttons">
+            <button class="btn-chat-accept-main" id="btn-chat-accept-main">
+              <span>✅</span>
+              <span id="txt-accept-main">Bağlantıyı Kabul Et (Başlat)</span>
+            </button>
+            <button class="btn-chat-decline-main" id="btn-chat-decline-main">
+              <span>Reddet</span>
+            </button>
+          </div>
+
+          <!-- Connected Strip (Active Session) -->
+          <div class="chat-connected-strip" id="chat-connected-strip">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="width:7px; height:7px; border-radius:50%; background:#10b981;"></span>
+              <span id="chat-connected-text">🟢 Teknisyen Bağlandı — Ekran Paylaşılıyor</span>
+            </div>
+            <button class="btn-disconnect" id="btn-chat-disconnect" style="padding:2px 8px; font-size:10px;">Sonlandır</button>
+          </div>
+        </div>
+
+        <!-- Messages Feed -->
+        <div class="chat-feed" id="chat-feed">
+          <div class="chat-msg system">
+            Homak canlı destek sohbetine hoş geldiniz. Teknisyeninizle buradan mesajlaşabilir, bildirimleri anlık alabilirsiniz.
+          </div>
+        </div>
+
+        <!-- Chat Input Bar -->
+        <div class="chat-input-bar">
+          <input type="text" class="chat-input" id="chat-input-field" placeholder="Mesajınızı buraya yazın..." />
+          <button class="btn-chat-send" id="btn-chat-send">Gönder</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: BAĞLANTI & KOD (Connection)        -->
+    <!-- ========================================== -->
+    <div class="tab-panel" id="panel-conn">
       <div class="connection-panel">
         <div class="hero-card">
           <span class="card-label">BU BİLGİSAYAR İÇİN DESTEK KODU</span>
@@ -854,7 +1169,7 @@
             <span id="copy-text">Kodu Kopyala</span>
           </button>
           <p class="code-helper" id="code-helper-text">
-            Destek almak istediğiniz teknisyene bu 6 haneli kodu iletiniz. Teknisyen bağlandığında ekranda onay bildirimi açılacaktır.
+            Destek almak istediğiniz teknisyene bu 6 haneli kodu iletiniz. Teknisyen bağlandığında onay verebilirsiniz.
           </p>
         </div>
 
@@ -887,27 +1202,6 @@
             <input type="text" class="manual-input" id="manual-code-input" maxlength="6" placeholder="000000" />
             <button class="btn-manual-submit" id="btn-manual-submit">Bağlan</button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- TAB 2: CANLI SOHBET (Chat)                -->
-    <!-- ========================================== -->
-    <div class="tab-panel" id="panel-chat">
-      <div class="chat-panel">
-        <div class="chat-header">
-          <span id="chat-header-title">💬 Canlı Destek Sohbeti</span>
-          <span style="font-size:10px; color:#10b981;">● Güvenli Kanal</span>
-        </div>
-        <div class="chat-feed" id="chat-feed">
-          <div class="chat-msg system">
-            Homak canlı destek odasına hoş geldiniz. Teknisyeninizle buradan anlık olarak mesajlaşabilirsiniz.
-          </div>
-        </div>
-        <div class="chat-input-bar">
-          <input type="text" class="chat-input" id="chat-input-field" placeholder="Mesajınızı buraya yazın..." />
-          <button class="btn-chat-send" id="btn-chat-send">Gönder</button>
         </div>
       </div>
     </div>
@@ -1020,6 +1314,19 @@
     <button class="btn-disconnect" id="btn-quit-app">Kapat</button>
   </div>
 
+  <!-- High-Visibility Alert Modal Overlay -->
+  <div class="agent-alert-modal-backdrop" id="agent-alert-modal" style="display:none;">
+    <div class="agent-alert-card">
+      <div class="agent-alert-icon-wrap">
+        <span>🔔</span>
+      </div>
+      <div class="agent-alert-badge">TEKNİSYEN BİLDİRİMİ</div>
+      <div class="agent-alert-sender" id="agent-alert-sender">Teknisyen</div>
+      <div class="agent-alert-message" id="agent-alert-text">Mesaj içeriği...</div>
+      <button class="btn-agent-alert-confirm" id="btn-agent-alert-confirm">Tamam / Anladım</button>
+    </div>
+  </div>
+
   <script>
     const { ipcRenderer } = require('electron');
     const os = require('os');
@@ -1037,6 +1344,21 @@
     const consentTechName = document.getElementById('consent-tech-name');
     const btnConsentAccept = document.getElementById('btn-consent-accept');
     const btnConsentDecline = document.getElementById('btn-consent-decline');
+
+    // Chat Consent Box Elements
+    const chatConsentBox = document.getElementById('chat-consent-box');
+    const chatPinCode = document.getElementById('chat-pin-code');
+    const chatStatusDot = document.getElementById('chat-status-dot');
+    const chatStatusText = document.getElementById('chat-status-text');
+    const chatConsentTitle = document.getElementById('chat-consent-title');
+    const chatConsentDesc = document.getElementById('chat-consent-desc');
+    const chatConsentButtons = document.getElementById('chat-consent-buttons');
+    const btnChatAcceptMain = document.getElementById('btn-chat-accept-main');
+    const btnChatDeclineMain = document.getElementById('btn-chat-decline-main');
+    const txtAcceptMain = document.getElementById('txt-accept-main');
+    const chatConnectedStrip = document.getElementById('chat-connected-strip');
+    const chatConnectedText = document.getElementById('chat-connected-text');
+    const btnChatDisconnect = document.getElementById('btn-chat-disconnect');
 
     // Navigation Tabs
     const tabBtnConn = document.getElementById('tab-btn-conn');
@@ -1067,6 +1389,12 @@
     const chatInputField = document.getElementById('chat-input-field');
     const btnChatSend = document.getElementById('btn-chat-send');
     const chatHeaderTitle = document.getElementById('chat-header-title');
+
+    // Alert Modal Elements
+    const agentAlertModal = document.getElementById('agent-alert-modal');
+    const agentAlertSender = document.getElementById('agent-alert-sender');
+    const agentAlertText = document.getElementById('agent-alert-text');
+    const btnAgentAlertConfirm = document.getElementById('btn-agent-alert-confirm');
 
     // Voice Tab Elements
     const voiceAvatar = document.getElementById('voice-avatar');
@@ -1174,6 +1502,7 @@
       if (code.length === 6) {
         ipcRenderer.send('manual-code-submit', code);
         codeBox.textContent = `${code.slice(0,3)} ${code.slice(3)}`;
+        chatPinCode.textContent = `${code.slice(0,3)} ${code.slice(3)}`;
         manualInputBox.classList.remove('show');
         codeHelperText.textContent = 'Kod onaylandı. Sunucuya bağlanılıyor...';
       } else {
@@ -1224,6 +1553,40 @@
       } catch(e) {}
     }
 
+    // High Priority Notification Chime (For alerts / bildirim)
+    function playAlertChime() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc1.type = 'triangle';
+        osc2.type = 'sine';
+
+        // 3-note ascending chime
+        osc1.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        osc1.frequency.setValueAtTime(659.25, ctx.currentTime + 0.12); // E5
+        osc1.frequency.setValueAtTime(783.99, ctx.currentTime + 0.24); // G5
+        osc1.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.36); // C6
+
+        osc2.frequency.setValueAtTime(1046.50, ctx.currentTime);
+        osc2.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.24);
+
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc1.start();
+        osc2.start();
+        osc1.stop(ctx.currentTime + 0.7);
+        osc2.stop(ctx.currentTime + 0.7);
+      } catch(e) {}
+    }
+
     // Session Timer
     function startSessionTimer() {
       sessionSeconds = 0;
@@ -1236,10 +1599,43 @@
       }, 1000);
     }
 
+    // Consent Choice Execution
+    function handleAccept() {
+      consentBanner.classList.remove('show');
+      sessionActiveBar.classList.add('show');
+      chatConsentButtons.style.display = 'none';
+      chatConnectedStrip.style.display = 'flex';
+      chatConsentBox.classList.remove('pending-pulse');
+      chatStatusDot.className = 'dot green';
+      chatStatusText.textContent = 'Canlı Oturum Aktif';
+      chatConsentTitle.textContent = '🟢 Canlı Bağlantı Başlatıldı';
+      chatConsentDesc.textContent = `${currentTechnician} şu anda bilgisayarınızı uzaktan yönetmektedir.`;
+      
+      ipcRenderer.send('user-consent-choice', 'accepted');
+      startSessionTimer();
+      playBeep();
+    }
+
+    function handleDecline() {
+      consentBanner.classList.remove('show');
+      chatConsentBox.classList.remove('pending-pulse');
+      chatStatusDot.className = 'dot';
+      chatStatusText.textContent = 'Bağlantı Reddedildi';
+      chatConsentDesc.textContent = 'Uzak bağlantı isteğini reddettiniz.';
+      ipcRenderer.send('user-consent-choice', 'declined');
+    }
+
+    btnConsentAccept.addEventListener('click', handleAccept);
+    btnChatAcceptMain.addEventListener('click', handleAccept);
+    btnConsentDecline.addEventListener('click', handleDecline);
+    btnChatDeclineMain.addEventListener('click', handleDecline);
+
     // Agent State IPC Listener
     ipcRenderer.on('agent-state', (event, state) => {
       if (state.code && state.code !== '------') {
-        codeBox.textContent = `${state.code.slice(0,3)} ${state.code.slice(3)}`;
+        const fmtCode = `${state.code.slice(0,3)} ${state.code.slice(3)}`;
+        codeBox.textContent = fmtCode;
+        chatPinCode.textContent = fmtCode;
       }
 
       if (state.technicianName) {
@@ -1247,12 +1643,21 @@
         activeTechnicianTitle.textContent = currentTechnician;
         consentTechName.textContent = currentTechnician;
         chatHeaderTitle.textContent = `💬 ${currentTechnician} ile Sohbet`;
+        chatConnectedText.textContent = `🟢 ${currentTechnician} Bağlandı — Ekran Paylaşılıyor`;
       }
 
       if (state.sessionActive) {
         // Connected & Active
         consentBanner.classList.remove('show');
         sessionActiveBar.classList.add('show');
+        chatConsentButtons.style.display = 'none';
+        chatConnectedStrip.style.display = 'flex';
+        chatConsentBox.classList.remove('pending-pulse');
+        chatStatusDot.className = 'dot green';
+        chatStatusText.textContent = 'Canlı Oturum Aktif';
+        chatConsentTitle.textContent = '🟢 Canlı Bağlantı Aktif';
+        chatConsentDesc.textContent = `${currentTechnician} ile ekran paylaşımı ve uzak kontrol aktif.`;
+
         headerStatusDot.className = 'status-dot';
         headerStatusText.textContent = 'Canlı Oturum';
         headerStatusText.style.color = '#10b981';
@@ -1265,35 +1670,41 @@
         // Consent Needed
         sessionActiveBar.classList.remove('show');
         consentBanner.classList.add('show');
+        chatConsentButtons.style.display = 'flex';
+        chatConnectedStrip.style.display = 'none';
+        chatConsentBox.classList.add('pending-pulse');
+        chatStatusDot.className = 'dot';
+        chatStatusDot.style.background = '#f59e0b';
+        chatStatusText.textContent = 'Onay Bekleniyor';
+        chatConsentTitle.textContent = `🛡️ ${currentTechnician} Uzak Kontrol İzni İstiyor`;
+        chatConsentDesc.textContent = 'Teknisyeninizin bilgisayarınızı uzaktan yönetebilmesi için lütfen aşağıdaki butondan onay verin.';
+        txtAcceptMain.textContent = '✅ Bağlantıyı Hemen Kabul Et';
+
         headerStatusDot.className = 'status-dot yellow';
         headerStatusText.textContent = 'Onay Bekleniyor';
         headerStatusText.style.color = '#f59e0b';
         specPermVal.textContent = 'Onay İsteniyor...';
         specPermVal.style.color = '#f59e0b';
-        playBeep();
+        playAlertChime();
+        switchTab('chat');
       } else {
         // Waiting / In Queue
         consentBanner.classList.remove('show');
         sessionActiveBar.classList.remove('show');
+        chatConsentButtons.style.display = 'flex';
+        chatConnectedStrip.style.display = 'none';
+        chatConsentBox.classList.remove('pending-pulse');
+        chatStatusDot.className = 'dot';
+        chatStatusDot.style.background = state.connected ? '#10b981' : '#f59e0b';
+        chatStatusText.textContent = state.connected ? 'Kuyrukta (Hazır)' : 'Bağlanıyor...';
+        txtAcceptMain.textContent = 'Bağlantıyı Kabul Et (Başlat)';
+
         headerStatusDot.className = state.connected ? 'status-dot' : 'status-dot red';
         headerStatusText.textContent = state.connected ? 'Kuyrukta' : 'Bağlanıyor';
         headerStatusText.style.color = state.connected ? '#94a3b8' : '#ef4444';
         specPermVal.textContent = 'Beklemede';
         specPermVal.style.color = '#94a3b8';
       }
-    });
-
-    // Consent Responses
-    btnConsentAccept.addEventListener('click', () => {
-      consentBanner.classList.remove('show');
-      sessionActiveBar.classList.add('show');
-      ipcRenderer.send('user-consent-choice', 'accepted');
-      startSessionTimer();
-    });
-
-    btnConsentDecline.addEventListener('click', () => {
-      consentBanner.classList.remove('show');
-      ipcRenderer.send('user-consent-choice', 'declined');
     });
 
     // Disconnect Actions
@@ -1303,10 +1714,11 @@
       }
     }
     btnEndSession.addEventListener('click', handleDisconnect);
+    btnChatDisconnect.addEventListener('click', handleDisconnect);
     btnQuitApp.addEventListener('click', handleDisconnect);
 
     // ==========================================
-    // CHAT SYSTEM
+    // CHAT SYSTEM & HIGH-PRIORITY ALERT
     // ==========================================
     function appendChatMessage(sender, senderName, text) {
       const msg = document.createElement('div');
@@ -1325,7 +1737,6 @@
       chatFeed.scrollTop = chatFeed.scrollHeight;
 
       if (sender !== 'agent') {
-        playBeep();
         if (!panelChat.classList.contains('active')) {
           unreadChatCount++;
           chatBadge.textContent = unreadChatCount;
@@ -1349,9 +1760,34 @@
       }
     });
 
+    // Alert Modal Dismiss Button
+    btnAgentAlertConfirm.addEventListener('click', () => {
+      agentAlertModal.style.display = 'none';
+      chatInputField.focus();
+    });
+
+    // Received Incoming Chat / Notification Message
     ipcRenderer.on('chat-message', (event, data) => {
       if (data && data.text) {
         appendChatMessage(data.sender, data.senderName, data.text);
+
+        // Auto-switch to chat page whenever technician messages
+        switchTab('chat');
+
+        // Check if message is a notification alert or contains 'bildirim'
+        const isNotification = (data.text && /bildirim/i.test(data.text)) || data.isAlert;
+
+        if (data.sender !== 'agent') {
+          if (isNotification) {
+            // High priority alert modal & chime!
+            agentAlertSender.textContent = `${data.senderName || currentTechnician} Teknisyeninden Bildirim:`;
+            agentAlertText.textContent = data.text;
+            agentAlertModal.style.display = 'flex';
+            playAlertChime();
+          } else {
+            playBeep();
+          }
+        }
       }
     });
 
@@ -1512,6 +1948,9 @@
         console.error('WebRTC handling error:', err);
       }
     });
+
+    // Ensure on load we are on chat tab
+    switchTab('chat');
   </script>
 </body>
 </html>
