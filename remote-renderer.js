@@ -7,6 +7,7 @@ const ctx = canvas.getContext('2d', { alpha: false });
 let captureInterval = null;
 let streaming = false;
 let frameCount = 0;
+let isFrameBusy = false;
 
 // Prevent video playback from pausing in background
 video.addEventListener('pause', () => {
@@ -58,35 +59,59 @@ ipcRenderer.on('start-capture', async (event, data) => {
 
         if (captureInterval) clearInterval(captureInterval);
 
+        // Ultra-low latency, smooth ~25 FPS pipeline with adaptive resolution
+        const targetIntervalMs = 40; // 25 FPS (smooth & low lag)
+
         captureInterval = setInterval(() => {
-            if (!streaming) return;
+            if (!streaming || isFrameBusy) return;
             try {
                 if (video.paused) {
                     video.play().catch(() => {});
                 }
-                if (video.videoWidth > 0 && video.videoHeight > 0) {
-                    if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
-                    if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
-                    const base64 = dataUrl.split(',')[1];
+                const vw = video.videoWidth;
+                const vh = video.videoHeight;
+                if (vw <= 0 || vh <= 0) return;
+
+                isFrameBusy = true;
+
+                // Adaptive resolution: cap at 1280px width for fast encoding & sharp readability
+                let cw = vw;
+                let ch = vh;
+                const maxW = 1280;
+                if (cw > maxW) {
+                    ch = Math.round((ch * maxW) / cw);
+                    cw = maxW;
+                }
+
+                if (canvas.width !== cw) canvas.width = cw;
+                if (canvas.height !== ch) canvas.height = ch;
+
+                ctx.drawImage(video, 0, 0, cw, ch);
+
+                // Quality 0.42 yields ~35KB per frame with crisp text & zero lag
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.42);
+                const commaIdx = dataUrl.indexOf(',');
+                if (commaIdx !== -1) {
+                    const base64 = dataUrl.slice(commaIdx + 1);
                     if (base64) {
                         frameCount++;
-                        if (frameCount % 30 === 1) {
-                            ipcRenderer.send('rd-log', 'Sent frame ' + frameCount + ' (' + canvas.width + 'x' + canvas.height + ')');
+                        if (frameCount % 60 === 1) {
+                            ipcRenderer.send('rd-log', 'Sent frame ' + frameCount + ' (' + cw + 'x' + ch + ')');
                         }
                         ipcRenderer.send('rd-frame', {
                             sessionId,
                             frame: base64,
-                            width: canvas.width,
-                            height: canvas.height
+                            width: cw,
+                            height: ch
                         });
                     }
                 }
             } catch(e) {
                 ipcRenderer.send('rd-error', { sessionId, error: e.message });
+            } finally {
+                isFrameBusy = false;
             }
-        }, 100); // 10 FPS
+        }, targetIntervalMs);
     } catch(err) {
         ipcRenderer.send('rd-error', { sessionId, error: err.message });
     }
@@ -118,8 +143,8 @@ ipcRenderer.on('switch-source', async (event, data) => {
                 mandatory: {
                     chromeMediaSource: 'desktop',
                     chromeMediaSourceId: sourceId,
-                    maxWidth: 2560,
-                    maxHeight: 1440
+                    maxWidth: 1920,
+                    maxHeight: 1080
                 }
             }
         });

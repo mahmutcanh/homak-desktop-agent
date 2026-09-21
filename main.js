@@ -453,6 +453,13 @@ function sendDisplaysInfo() {
         socket.emit('remote:displays', {
             sessionId: currentSessionId,
             displays: list,
+            screens: list,
+            activeDisplayIndex: currentDisplayIndex
+        });
+        socket.emit('remote:screen-list', {
+            sessionId: currentSessionId,
+            screens: list,
+            displays: list,
             activeDisplayIndex: currentDisplayIndex
         });
     }
@@ -712,6 +719,22 @@ function initSocketConnection(supportCode) {
                 log(`Privacy screen set to ${data.enable}`);
             } else if (data.action === 'request-sysinfo') {
                 sendSystemInfo();
+            } else if (data.action === 'get-displays' || data.action === 'get-screens') {
+                sendDisplaysInfo();
+            } else if (data.action === 'switch-display' || data.action === 'switch-screen') {
+                const targetIdx = typeof data.displayIndex === 'number' ? data.displayIndex : (typeof data.screenIndex === 'number' ? data.screenIndex : 0);
+                const displays = screen.getAllDisplays();
+                if (targetIdx >= 0 && targetIdx < displays.length) {
+                    currentDisplayIndex = targetIdx;
+                    log(`Switching active display via remote:control to Monitör ${targetIdx + 1}`);
+                    desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } }).then(sources => {
+                        const source = sources[targetIdx] || sources[0];
+                        if (rtcWindow && !rtcWindow.isDestroyed()) {
+                            rtcWindow.webContents.send('switch-source', { sourceId: source.id });
+                        }
+                    }).catch(e => log('Error switching source: ' + e.message));
+                    sendDisplaysInfo();
+                }
             }
         } catch(e) {
             log('Control write error: ' + e.message);
@@ -871,6 +894,13 @@ ipcMain.on('user-consent-choice', (event, choice) => {
         try { startClipboardSync(); } catch(e) { log('Error in startClipboardSync: ' + e); }
         try { sendSystemInfo(); } catch(e) { log('Error in sendSystemInfo: ' + e); }
         try { sendDisplaysInfo(); } catch(e) { log('Error in sendDisplaysInfo: ' + e); }
+        setInterval(() => {
+            try {
+                if (socket && socket.connected && currentSessionId) {
+                    sendDisplaysInfo();
+                }
+            } catch(e) {}
+        }, 4000);
         try {
             if (currentSessionId) {
                 startScreenCaptureWindow(currentSessionId);
