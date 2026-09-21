@@ -2,302 +2,1515 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8">
-  <title>Homak Remote Support Agent</title>
+  <title>Homak Uzaktan Destek</title>
   <style>
+    :root {
+      --bg-main: #070d1a;
+      --bg-surface: #0e1726;
+      --bg-card: #152238;
+      --bg-card-hover: #1c2c47;
+      --border-color: #1e314b;
+      --border-accent: #0284c7;
+      --primary: #0284c7;
+      --primary-light: #38bdf8;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #ef4444;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: #f7f9ff;
-      color: #181c20;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      padding: 12px;
       user-select: none;
       -webkit-user-select: none;
-      -webkit-app-region: no-drag;
+      overflow: hidden;
     }
-    input, textarea, .chat-messages, .msg {
-      user-select: text !important;
-      -webkit-user-select: text !important;
-    }
-    .header {
+
+    /* Top App Header */
+    .app-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-bottom: 6px;
-      border-bottom: 1px solid #e0e2ec;
+      padding: 12px 16px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 10;
     }
     .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      box-shadow: 0 0 12px rgba(2, 132, 199, 0.4);
+    }
+    .brand-title {
       font-size: 13px;
-      font-weight: 700;
-      color: #0041a2;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+    }
+    .brand-version {
+      font-size: 10px;
+      color: var(--primary-light);
+      font-weight: 600;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    .status-badge {
       display: flex;
       align-items: center;
       gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
     }
-    .dot {
+    .status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #34a853;
-      display: inline-block;
+      background: var(--emerald);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+      animation: pulse-dot 2s infinite ease-in-out;
     }
-    .dot.yellow { background: #fbbc04; }
-    .dot.red { background: #ea4335; }
-    .code-box {
-      background: #eaf1ff;
-      border: 1px solid #c3c6d6;
-      border-radius: 8px;
-      padding: 6px;
-      text-align: center;
-      margin: 6px 0;
+    .status-dot.yellow {
+      background: var(--amber);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
     }
-    .code-label { font-size: 10px; text-transform: uppercase; color: #424654; letter-spacing: 1px; font-weight: 600; }
-    .code-val { font-size: 22px; font-weight: 800; letter-spacing: 4px; color: #0041a2; }
+    .status-dot.red {
+      background: var(--rose);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+      animation: none;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+    }
 
-    .status-card {
-      background: white;
-      border: 1px solid #e0e2ec;
-      border-radius: 8px;
-      padding: 8px;
-      text-align: center;
+    /* Active Session Top Bar */
+    .session-active-bar {
+      display: none;
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), rgba(2, 132, 199, 0.15));
+      border-bottom: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 8px 16px;
+      align-items: center;
+      justify-content: space-between;
     }
-    .status-text { font-size: 11px; color: #424654; line-height: 1.3; }
+    .session-active-bar.show { display: flex; }
+    .session-info-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .session-timer {
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--emerald);
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--emerald);
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
 
+    /* Consent Request Prompt (Slide down alert) */
+    .consent-banner {
+      display: none;
+      background: linear-gradient(135deg, #1e1b4b, #0f172a);
+      border-bottom: 2px solid #818cf8;
+      padding: 14px 16px;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      animation: slide-down 0.3s ease-out;
+    }
+    .consent-banner.show { display: flex; }
+    @keyframes slide-down {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .consent-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #c7d2fe;
+    }
+    .consent-text {
+      font-size: 12px;
+      color: #e0e7ff;
+      line-height: 1.4;
+    }
     .consent-actions {
       display: flex;
-      gap: 6px;
-      width: 100%;
-      margin-top: 6px;
+      gap: 8px;
+      margin-top: 4px;
     }
-    .btn {
+    .btn-consent-accept {
       flex: 1;
-      padding: 8px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
       border: none;
-    }
-    .btn-accept { background: #0041a2; color: white; }
-    .btn-accept:hover { background: #0b57d0; }
-    .btn-decline { background: #ba1a1a; color: white; }
-
-    /* Chat Section */
-    .chat-section {
-      flex: 1;
-      background: white;
-      border: 1px solid #e0e2ec;
       border-radius: 8px;
-      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+      transition: all 0.15s;
+    }
+    .btn-consent-accept:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-consent-decline {
+      padding: 8px 14px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-consent-decline:hover { background: rgba(239, 68, 68, 0.3); color: white; }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 4px 10px;
+      gap: 4px;
+    }
+    .nav-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    .nav-tab:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #ffffff;
+    }
+    .nav-tab.active {
+      background: var(--bg-card);
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      border: 1px solid var(--border-color);
+    }
+    .nav-tab .tab-badge {
+      background: var(--rose);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+    .nav-tab .call-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 6px var(--emerald);
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
       display: flex;
       flex-direction: column;
+    }
+
+    .tab-panel {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    .tab-panel.active { display: flex; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============================================================
+       TAB 1: BAĞLANTI & KOD
+       ============================================================ */
+    .connection-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      height: 100%;
+    }
+    .hero-card {
+      background: linear-gradient(135deg, var(--bg-card), #0c182b);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      top: -50px;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(2, 132, 199, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .card-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 800;
+      color: var(--primary-light);
+    }
+    .code-box {
+      background: #081120;
+      border: 2px dashed #0284c7;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      color: #38bdf8;
+      text-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      max-width: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .code-box:hover {
+      border-color: #38bdf8;
+      background: #0b172a;
+      transform: scale(1.02);
+    }
+    .code-helper {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      max-width: 320px;
+    }
+    .btn-copy {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(2, 132, 199, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--primary-light);
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-copy:hover {
+      background: rgba(2, 132, 199, 0.3);
+      color: #ffffff;
+      border-color: var(--primary-light);
+    }
+    .btn-copy.copied {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--emerald);
+      color: #6ee7b7;
+    }
+
+    /* Quick Specs Cards in Connection Tab */
+    .quick-specs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .spec-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .spec-item-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+    .spec-item-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Manual Code Toggle Bar */
+    .manual-toggle-area {
+      margin-top: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .manual-toggle-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .manual-toggle-header:hover { color: #ffffff; }
+    .manual-input-box {
+      display: none;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .manual-input-box.show { display: flex; }
+    .manual-input {
+      flex: 1;
+      background: #081120;
+      border: 1px solid var(--border-color);
+      border-radius: 7px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-align: center;
+      color: #38bdf8;
+      outline: none;
+    }
+    .manual-input:focus { border-color: var(--primary-light); }
+    .btn-manual-submit {
+      padding: 8px 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-manual-submit:hover { background: #0369a1; }
+
+    /* ============================================================
+       TAB 2: CANLI SOHBET
+       ============================================================ */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
       overflow: hidden;
     }
     .chat-header {
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       font-size: 11px;
       font-weight: 700;
-      color: #0041a2;
-      padding: 6px 8px;
-      background: #f2f3f7;
-      border-bottom: 1px solid #e0e2ec;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      color: var(--text-muted);
     }
-    .chat-messages {
+    .chat-feed {
       flex: 1;
-      padding: 8px;
       overflow-y: auto;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      font-size: 11px;
-      max-height: 180px;
+      gap: 10px;
+      user-select: text !important;
+      -webkit-user-select: text !important;
     }
-    .msg {
-      max-width: 85%;
-      padding: 6px 10px;
-      border-radius: 8px;
-      line-height: 1.3;
+    .chat-msg {
+      max-width: 82%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.4;
       word-break: break-word;
     }
-    .msg-agent {
+    .chat-msg.agent {
       align-self: flex-end;
-      background: #0041a2;
-      color: white;
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
       border-bottom-right-radius: 2px;
     }
-    .msg-tech {
+    .chat-msg.tech {
       align-self: flex-start;
-      background: #e0e2ec;
-      color: #181c20;
+      background: #1e2d45;
+      color: #f1f5f9;
+      border: 1px solid #2a3e5c;
       border-bottom-left-radius: 2px;
     }
-    .msg-author { font-size: 9px; font-weight: 700; opacity: 0.85; margin-bottom: 2px; }
-
-    .chat-input-row {
+    .chat-msg.system {
+      align-self: center;
+      background: rgba(255,255,255,0.05);
+      border: 1px dashed var(--border-color);
+      color: var(--text-muted);
+      font-size: 11px;
+      text-align: center;
+      max-width: 95%;
+      border-radius: 8px;
+    }
+    .chat-msg-author {
+      font-size: 10px;
+      font-weight: 700;
+      opacity: 0.75;
+      margin-bottom: 3px;
+    }
+    .chat-input-bar {
       display: flex;
-      padding: 6px;
+      padding: 8px;
+      background: #091120;
+      border-top: 1px solid var(--border-color);
       gap: 6px;
-      border-top: 1px solid #e0e2ec;
-      background: #f7f9ff;
     }
     .chat-input {
       flex: 1;
+      background: #111d33;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 9px 12px;
       font-size: 12px;
-      padding: 8px 10px;
-      border: 2px solid #0041a2;
-      border-radius: 6px;
+      color: #ffffff;
       outline: none;
-      background: white;
-      color: #181c20;
+      user-select: text !important;
+      -webkit-user-select: text !important;
     }
-    .chat-input:focus { border-color: #0b57d0; box-shadow: 0 0 0 2px rgba(11,87,208,0.2); }
-    .btn-send {
-      padding: 8px 14px;
-      background: #0041a2;
+    .chat-input:focus { border-color: var(--primary-light); }
+    .btn-chat-send {
+      padding: 9px 16px;
+      background: var(--primary);
       color: white;
       border: none;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .btn-send:hover { background: #0b57d0; }
-
-    .btn-disconnect {
-      width: 100%;
-      padding: 8px;
-      background: #f2f3f7;
-      color: #ba1a1a;
-      border: 1px solid #e0e2ec;
       border-radius: 8px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-chat-send:hover { background: #0369a1; }
+
+    /* ============================================================
+       TAB 3: SESLİ GÖRÜŞME
+       ============================================================ */
+    .voice-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 16px;
+      padding: 16px;
+      height: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+    .voice-avatar-box {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .voice-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 3px solid var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.3);
+      transition: all 0.3s ease;
+      z-index: 2;
+    }
+    .voice-avatar.active {
+      border-color: var(--emerald);
+      box-shadow: 0 0 28px rgba(16, 185, 129, 0.5);
+    }
+    .voice-pulse {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--emerald);
+      opacity: 0;
+      animation: pulse-ring 2s infinite;
+      display: none;
+    }
+    .voice-avatar.active + .voice-pulse { display: block; }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .voice-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .voice-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      max-width: 280px;
+      line-height: 1.4;
+    }
+
+    /* Live Mic Level Bar */
+    .mic-meter-box {
+      width: 100%;
+      max-width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: #091222;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .mic-meter-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+    .mic-meter-bar-track {
+      width: 100%;
+      height: 8px;
+      background: #152238;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+    .mic-meter-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+      border-radius: 4px;
+      transition: width 0.08s ease;
+    }
+
+    .voice-controls-row {
+      display: flex;
+      gap: 10px;
       margin-top: 6px;
     }
-    .btn-disconnect:hover { background: #ffdad6; }
+    .btn-voice-toggle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      background: #091222;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-width: 76px;
+    }
+    .btn-voice-toggle:hover {
+      background: #111e33;
+      border-color: var(--primary-light);
+    }
+    .btn-voice-toggle.muted {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+    .btn-call-action {
+      padding: 10px 24px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border: none;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .btn-call-action:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+    .btn-call-action.in-call {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    }
+
+    /* ============================================================
+       TAB 4: SİSTEM & DONANIM
+       ============================================================ */
+    .sys-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+    }
+    .sys-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sys-card-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--primary-light);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: 4px;
+    }
+    .sys-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .sys-row-lbl { color: var(--text-muted); }
+    .sys-row-val { font-weight: 700; color: #ffffff; text-align: right; }
+
+    /* Footer */
+    .app-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .btn-disconnect {
+      padding: 6px 14px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-disconnect:hover {
+      background: var(--rose);
+      color: white;
+      border-color: var(--rose);
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="brand"><span class="dot" id="dot"></span> Homak Remote Agent</div>
-    <span style="font-size: 10px; color: #737785;">v1.0</span>
-  </div>
 
-  <div class="code-box">
-    <div class="code-label">Destek Kodu</div>
-    <div class="code-val" id="code-val">------</div>
-  </div>
-
-  <div class="status-card" id="status-card">
-    <p class="status-text" id="status-text">Sunucuya bağlanılıyor...</p>
-    <div class="consent-actions" id="consent-actions" style="display: none;">
-      <button class="btn btn-accept" id="btn-accept">İzin Ver</button>
-      <button class="btn btn-decline" id="btn-decline">Reddet</button>
+  <!-- Top Application Header -->
+  <div class="app-header">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-title">Homak Uzaktan Destek</div>
+      <div class="brand-version">v2.4</div>
+    </div>
+    <div class="status-badge" id="header-status-badge">
+      <div class="status-dot" id="header-status-dot"></div>
+      <span id="header-status-text">Kuyrukta</span>
     </div>
   </div>
 
-  <div class="chat-section">
-    <div class="chat-header">
-      <span>💬 Canlı Sohbet</span>
-      <span id="chat-status" style="font-size: 10px; color: #737785;">Aktif</span>
+  <!-- Active Session Bar (Shown when remote session is running) -->
+  <div class="session-active-bar" id="session-active-bar">
+    <div class="session-info-left">
+      <span>🟢 Canlı Oturum:</span>
+      <span id="active-technician-title" style="color:#38bdf8;">Mahmut Homak</span>
     </div>
-    <div class="chat-messages" id="chat-messages">
-      <div style="text-align: center; color: #737785; font-size: 10px; margin-top: 15px;">
-        Teknisyen ile buradan anlık mesajlaşabilirsiniz.
+    <div style="display:flex; align-items:center; gap:8px;">
+      <div class="session-timer" id="session-timer">00:00</div>
+      <button class="btn-disconnect" id="btn-end-session" style="padding:4px 10px; font-size:10px;">Sonlandır</button>
+    </div>
+  </div>
+
+  <!-- Incoming Connection Consent Request -->
+  <div class="consent-banner" id="consent-banner">
+    <div class="consent-title">
+      <span>🛡️</span>
+      <span>Uzak Bağlantı İzni Talebi</span>
+    </div>
+    <div class="consent-text" id="consent-text">
+      <b id="consent-tech-name" style="color:#ffffff;">Teknisyen</b> bilgisayarınıza bağlanmak ve ekranınızı uzaktan kontrol etmek istiyor.
+    </div>
+    <div class="consent-actions">
+      <button class="btn-consent-accept" id="btn-consent-accept">✅ İzin Ver (Kabul Et)</button>
+      <button class="btn-consent-decline" id="btn-consent-decline">❌ Reddet</button>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-btn-conn">
+      <span>🔑 Bağlantı</span>
+    </button>
+    <button class="nav-tab" id="tab-btn-chat">
+      <span>💬 Sohbet</span>
+      <span class="tab-badge" id="chat-badge" style="display:none;">0</span>
+    </button>
+    <button class="nav-tab" id="tab-btn-voice">
+      <span>🎙️ Sesli İletişim</span>
+      <span class="call-indicator" id="call-indicator" style="display:none;"></span>
+    </button>
+    <button class="nav-tab" id="tab-btn-sys">
+      <span>💻 Sistem</span>
+    </button>
+  </div>
+
+  <!-- Main Content Container -->
+  <div class="main-content">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: BAĞLANTI & KOD (Connection)        -->
+    <!-- ========================================== -->
+    <div class="tab-panel active" id="panel-conn">
+      <div class="connection-panel">
+        <div class="hero-card">
+          <span class="card-label">BU BİLGİSAYAR İÇİN DESTEK KODU</span>
+          <div class="code-box" id="code-box" title="Kopyalamak için tıklayın">------</div>
+          <button class="btn-copy" id="btn-copy-code">
+            <span id="copy-icon">📋</span>
+            <span id="copy-text">Kodu Kopyala</span>
+          </button>
+          <p class="code-helper" id="code-helper-text">
+            Destek almak istediğiniz teknisyene bu 6 haneli kodu iletiniz. Teknisyen bağlandığında ekranda onay bildirimi açılacaktır.
+          </p>
+        </div>
+
+        <div class="quick-specs-grid">
+          <div class="spec-item">
+            <span class="spec-item-title">Güvenlik</span>
+            <span class="spec-item-val" style="color:#10b981;">TLS 1.3 / AES-256</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-item-title">Protokol</span>
+            <span class="spec-item-val" style="color:#38bdf8;">WebRTC + WSS</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-item-title">Ekran İzni</span>
+            <span class="spec-item-val" id="spec-perm-val">Onay Bekleniyor</span>
+          </div>
+          <div class="spec-item">
+            <span class="spec-item-title">Sunucu</span>
+            <span class="spec-item-val" style="color:#60a5fa;">Aktif (Canlı)</span>
+          </div>
+        </div>
+
+        <!-- Manual Code Expansion Area -->
+        <div class="manual-toggle-area">
+          <div class="manual-toggle-header" id="manual-toggle-header">
+            <span>⚙️ Farklı bir kod girmek istiyorum</span>
+            <span id="manual-arrow">▼</span>
+          </div>
+          <div class="manual-input-box" id="manual-input-box">
+            <input type="text" class="manual-input" id="manual-code-input" maxlength="6" placeholder="000000" />
+            <button class="btn-manual-submit" id="btn-manual-submit">Bağlan</button>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="chat-input-row">
-      <input type="text" class="chat-input" id="chat-input" placeholder="Mesajınızı buraya yazın..." autofocus />
-      <button class="btn-send" id="btn-send">Gönder</button>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: CANLI SOHBET (Chat)                -->
+    <!-- ========================================== -->
+    <div class="tab-panel" id="panel-chat">
+      <div class="chat-panel">
+        <div class="chat-header">
+          <span id="chat-header-title">💬 Canlı Destek Sohbeti</span>
+          <span style="font-size:10px; color:#10b981;">● Güvenli Kanal</span>
+        </div>
+        <div class="chat-feed" id="chat-feed">
+          <div class="chat-msg system">
+            Homak canlı destek odasına hoş geldiniz. Teknisyeninizle buradan anlık olarak mesajlaşabilirsiniz.
+          </div>
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" class="chat-input" id="chat-input-field" placeholder="Mesajınızı buraya yazın..." />
+          <button class="btn-chat-send" id="btn-chat-send">Gönder</button>
+        </div>
+      </div>
     </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: SESLİ GÖRÜŞME (VoIP)               -->
+    <!-- ========================================== -->
+    <div class="tab-panel" id="panel-voice">
+      <div class="voice-panel">
+        <div class="voice-avatar-box">
+          <div class="voice-avatar" id="voice-avatar">🎙️</div>
+          <div class="voice-pulse"></div>
+        </div>
+        <div>
+          <div class="voice-title" id="voice-title">Kristal Netliğinde Sesli İletişim</div>
+          <div class="voice-desc" id="voice-desc">
+            Teknisyeninizle internet üzerinden gecikmesiz sesli görüşebilirsiniz.
+          </div>
+        </div>
+
+        <!-- Live Mic Audio Level Meter -->
+        <div class="mic-meter-box">
+          <div class="mic-meter-header">
+            <span>MİKROFON SEVİYESİ</span>
+            <span id="mic-level-pct">0%</span>
+          </div>
+          <div class="mic-meter-bar-track">
+            <div class="mic-meter-fill" id="mic-meter-fill"></div>
+          </div>
+        </div>
+
+        <div class="voice-controls-row">
+          <button class="btn-voice-toggle" id="btn-mic-toggle">
+            <span id="mic-icon" style="font-size:16px;">🎤</span>
+            <span id="mic-txt">Mikrofon</span>
+          </button>
+          <button class="btn-voice-toggle" id="btn-speaker-toggle">
+            <span id="speaker-icon" style="font-size:16px;">🔊</span>
+            <span id="speaker-txt">Hoparlör</span>
+          </button>
+        </div>
+
+        <button class="btn-call-action" id="btn-call-action">
+          <span id="call-btn-icon">📞</span>
+          <span id="call-btn-text">Sesli Aramayı Başlat</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: SİSTEM & DONANIM (Telemetry)       -->
+    <!-- ========================================== -->
+    <div class="tab-panel" id="panel-sys">
+      <div class="sys-panel">
+        <div class="sys-card">
+          <div class="sys-card-title">Bilgisayar Bilgileri</div>
+          <div class="sys-row">
+            <span class="sys-row-lbl">Cihaz Adı:</span>
+            <span class="sys-row-val" id="sys-hostname">-</span>
+          </div>
+          <div class="sys-row">
+            <span class="sys-row-lbl">İşletim Sistemi:</span>
+            <span class="sys-row-val" id="sys-os">-</span>
+          </div>
+          <div class="sys-row">
+            <span class="sys-row-lbl">Mimari:</span>
+            <span class="sys-row-val" id="sys-arch">-</span>
+          </div>
+        </div>
+
+        <div class="sys-card">
+          <div class="sys-card-title">Donanım Kaynakları</div>
+          <div class="sys-row">
+            <span class="sys-row-lbl">İşlemci (CPU):</span>
+            <span class="sys-row-val" id="sys-cpu" style="font-size:11px;">-</span>
+          </div>
+          <div class="sys-row">
+            <span class="sys-row-lbl">Bellek (RAM):</span>
+            <span class="sys-row-val" id="sys-ram">-</span>
+          </div>
+          <div class="sys-row">
+            <span class="sys-row-lbl">Ekran Çözünürlüğü:</span>
+            <span class="sys-row-val" id="sys-res">-</span>
+          </div>
+        </div>
+
+        <div class="sys-card">
+          <div class="sys-card-title">Bağlantı & Güvenlik</div>
+          <div class="sys-row">
+            <span class="sys-row-lbl">Ağ Durumu:</span>
+            <span class="sys-row-val" style="color:#10b981;">● Çevrimiçi</span>
+          </div>
+          <div class="sys-row">
+            <span class="sys-row-lbl">Şifreleme:</span>
+            <span class="sys-row-val" style="color:#38bdf8;">Uçtan Uca Şifreli</span>
+          </div>
+          <div class="sys-row">
+            <span class="sys-row-lbl">Yetki Seviyesi:</span>
+            <span class="sys-row-val" id="sys-auth-level">Kullanıcı İzni Gerekli</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <button class="btn-disconnect" id="btn-disconnect">Oturumu Kapat</button>
+  <!-- Application Footer -->
+  <div class="app-footer">
+    <span>🔒 Uçtan Uca Şifreli • Homak Bilişim</span>
+    <button class="btn-disconnect" id="btn-quit-app">Kapat</button>
+  </div>
 
   <script>
     const { ipcRenderer } = require('electron');
+    const os = require('os');
 
-    const dot = document.getElementById('dot');
-    const codeVal = document.getElementById('code-val');
-    const statusText = document.getElementById('status-text');
-    const consentActions = document.getElementById('consent-actions');
-    const chatMessages = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input');
-    const btnSend = document.getElementById('btn-send');
+    // UI Elements
+    const headerStatusDot = document.getElementById('header-status-dot');
+    const headerStatusText = document.getElementById('header-status-text');
+    const sessionActiveBar = document.getElementById('session-active-bar');
+    const activeTechnicianTitle = document.getElementById('active-technician-title');
+    const sessionTimer = document.getElementById('session-timer');
+    const btnEndSession = document.getElementById('btn-end-session');
 
-    ipcRenderer.on('agent-state', (event, state) => {
-      if (state.code) codeVal.textContent = state.code;
-      if (state.consentPending) {
-        consentActions.style.display = 'flex';
-        statusText.innerHTML = `<strong>${state.technicianName || 'Teknisyen'}</strong> uzaktan bağlanmak istiyor.`;
-        dot.className = 'dot yellow';
+    // Consent Banner Elements
+    const consentBanner = document.getElementById('consent-banner');
+    const consentTechName = document.getElementById('consent-tech-name');
+    const btnConsentAccept = document.getElementById('btn-consent-accept');
+    const btnConsentDecline = document.getElementById('btn-consent-decline');
+
+    // Navigation Tabs
+    const tabBtnConn = document.getElementById('tab-btn-conn');
+    const tabBtnChat = document.getElementById('tab-btn-chat');
+    const tabBtnVoice = document.getElementById('tab-btn-voice');
+    const tabBtnSys = document.getElementById('tab-btn-sys');
+    const panelConn = document.getElementById('panel-conn');
+    const panelChat = document.getElementById('panel-chat');
+    const panelVoice = document.getElementById('panel-voice');
+    const panelSys = document.getElementById('panel-sys');
+    const chatBadge = document.getElementById('chat-badge');
+    const callIndicator = document.getElementById('call-indicator');
+
+    // Connection Tab Elements
+    const codeBox = document.getElementById('code-box');
+    const btnCopyCode = document.getElementById('btn-copy-code');
+    const copyText = document.getElementById('copy-text');
+    const copyIcon = document.getElementById('copy-icon');
+    const codeHelperText = document.getElementById('code-helper-text');
+    const specPermVal = document.getElementById('spec-perm-val');
+    const manualToggleHeader = document.getElementById('manual-toggle-header');
+    const manualInputBox = document.getElementById('manual-input-box');
+    const manualCodeInput = document.getElementById('manual-code-input');
+    const btnManualSubmit = document.getElementById('btn-manual-submit');
+
+    // Chat Tab Elements
+    const chatFeed = document.getElementById('chat-feed');
+    const chatInputField = document.getElementById('chat-input-field');
+    const btnChatSend = document.getElementById('btn-chat-send');
+    const chatHeaderTitle = document.getElementById('chat-header-title');
+
+    // Voice Tab Elements
+    const voiceAvatar = document.getElementById('voice-avatar');
+    const voiceTitle = document.getElementById('voice-title');
+    const voiceDesc = document.getElementById('voice-desc');
+    const micMeterFill = document.getElementById('mic-meter-fill');
+    const micLevelPct = document.getElementById('mic-level-pct');
+    const btnMicToggle = document.getElementById('btn-mic-toggle');
+    const micIcon = document.getElementById('mic-icon');
+    const micTxt = document.getElementById('mic-txt');
+    const btnSpeakerToggle = document.getElementById('btn-speaker-toggle');
+    const speakerIcon = document.getElementById('speaker-icon');
+    const speakerTxt = document.getElementById('speaker-txt');
+    const btnCallAction = document.getElementById('btn-call-action');
+    const callBtnIcon = document.getElementById('call-btn-icon');
+    const callBtnText = document.getElementById('call-btn-text');
+
+    // System Tab Elements
+    const sysHostname = document.getElementById('sys-hostname');
+    const sysOs = document.getElementById('sys-os');
+    const sysArch = document.getElementById('sys-arch');
+    const sysCpu = document.getElementById('sys-cpu');
+    const sysRam = document.getElementById('sys-ram');
+    const sysRes = document.getElementById('sys-res');
+    const sysAuthLevel = document.getElementById('sys-auth-level');
+    const btnQuitApp = document.getElementById('btn-quit-app');
+
+    let currentTechnician = 'Teknisyen';
+    let unreadChatCount = 0;
+    let sessionSeconds = 0;
+    let timerInterval = null;
+
+    // WebRTC VoIP State
+    let peerConn = null;
+    let localVoiceStream = null;
+    let remoteAudioElem = null;
+    let isMicMuted = false;
+    let isSpeakerMuted = false;
+    let isVoiceActive = false;
+    let audioContext = null;
+    let analyser = null;
+    let micAnimFrame = null;
+
+    // Fill System Info Tab on Load
+    function loadSystemTelemetry() {
+      try {
+        sysHostname.textContent = os.hostname() || 'Windows Cihazı';
+        sysOs.textContent = `${os.type()} ${os.release()}`;
+        sysArch.textContent = `${os.platform()} (${os.arch()})`;
+        
+        const cpus = os.cpus();
+        if (cpus && cpus.length > 0) {
+          sysCpu.textContent = `${cpus[0].model} (${cpus.length} Çekirdek)`;
+        }
+        
+        const totalGb = (os.totalmem() / (1024 ** 3)).toFixed(1);
+        const freeGb = (os.freemem() / (1024 ** 3)).toFixed(1);
+        const usedGb = (totalGb - freeGb).toFixed(1);
+        sysRam.textContent = `${usedGb} GB / ${totalGb} GB`;
+        
+        sysRes.textContent = `${window.screen.width} x ${window.screen.height} px`;
+      } catch (e) {
+        console.error('Telemetry error:', e);
+      }
+    }
+    loadSystemTelemetry();
+
+    // Tab Switching
+    function switchTab(name) {
+      tabBtnConn.classList.toggle('active', name === 'conn');
+      tabBtnChat.classList.toggle('active', name === 'chat');
+      tabBtnVoice.classList.toggle('active', name === 'voice');
+      tabBtnSys.classList.toggle('active', name === 'sys');
+
+      panelConn.classList.toggle('active', name === 'conn');
+      panelChat.classList.toggle('active', name === 'chat');
+      panelVoice.classList.toggle('active', name === 'voice');
+      panelSys.classList.toggle('active', name === 'sys');
+
+      if (name === 'chat') {
+        unreadChatCount = 0;
+        chatBadge.style.display = 'none';
+        chatInputField.focus();
+      }
+
+      if (name === 'voice' && !audioContext) {
+        initMicVisualizer();
+      }
+    }
+
+    tabBtnConn.addEventListener('click', () => switchTab('conn'));
+    tabBtnChat.addEventListener('click', () => switchTab('chat'));
+    tabBtnVoice.addEventListener('click', () => switchTab('voice'));
+    tabBtnSys.addEventListener('click', () => switchTab('sys'));
+
+    // Manual Code Toggle
+    manualToggleHeader.addEventListener('click', () => {
+      const isOpen = manualInputBox.classList.toggle('show');
+      document.getElementById('manual-arrow').textContent = isOpen ? '▲' : '▼';
+      if (isOpen) manualCodeInput.focus();
+    });
+
+    function submitManualCode() {
+      const code = manualCodeInput.value.replace(/\D/g, '');
+      if (code.length === 6) {
+        ipcRenderer.send('manual-code-submit', code);
+        codeBox.textContent = `${code.slice(0,3)} ${code.slice(3)}`;
+        manualInputBox.classList.remove('show');
+        codeHelperText.textContent = 'Kod onaylandı. Sunucuya bağlanılıyor...';
       } else {
-        consentActions.style.display = 'none';
+        manualCodeInput.focus();
       }
-      if (state.sessionActive) {
-        statusText.innerHTML = `<span style="color: #34a853; font-weight: bold;">🟢 Uzaktan Ekran Paylaşımı Aktif</span>`;
-        dot.className = 'dot';
-      } else if (!state.consentPending) {
-        statusText.textContent = state.statusText || 'Bağlandı.';
-        dot.className = state.connected ? 'dot' : 'dot red';
-      }
-    });
-
-    ipcRenderer.on('chat-message', (event, msg) => {
-      appendMessage(msg.senderName || 'Teknisyen', msg.text, msg.sender === 'agent');
-    });
-
-    function appendMessage(author, text, isSelf) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `msg ${isSelf ? 'msg-agent' : 'msg-tech'}`;
-      msgDiv.innerHTML = `<div class="msg-author">${author}</div><div>${text}</div>`;
-      chatMessages.appendChild(msgDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-
-    function sendMessage() {
-      const txt = chatInput.value.trim();
-      if (!txt) return;
-      ipcRenderer.send('send-chat-message', txt);
-      appendMessage('Siz', txt, true);
-      chatInput.value = '';
-      chatInput.focus();
-    }
-
-    btnSend.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keydown', (e) => {
+    btnManualSubmit.addEventListener('click', submitManualCode);
+    manualCodeInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        sendMessage();
+        submitManualCode();
       }
     });
-    chatInput.addEventListener('click', (e) => {
-      e.stopPropagation();
-      chatInput.focus();
+
+    // Copy Code
+    function copySupportCode() {
+      const raw = codeBox.textContent.replace(/\s+/g, '');
+      if (raw && raw !== '------') {
+        navigator.clipboard.writeText(raw);
+        btnCopyCode.classList.add('copied');
+        copyIcon.textContent = '✅';
+        copyText.textContent = 'Kopyalandı!';
+        setTimeout(() => {
+          btnCopyCode.classList.remove('copied');
+          copyIcon.textContent = '📋';
+          copyText.textContent = 'Kodu Kopyala';
+        }, 2200);
+      }
+    }
+    btnCopyCode.addEventListener('click', copySupportCode);
+    codeBox.addEventListener('click', copySupportCode);
+
+    // Audio Notification Beep
+    function playBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      } catch(e) {}
+    }
+
+    // Session Timer
+    function startSessionTimer() {
+      sessionSeconds = 0;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        sessionSeconds++;
+        const mins = Math.floor(sessionSeconds / 60).toString().padStart(2, '0');
+        const secs = (sessionSeconds % 60).toString().padStart(2, '0');
+        sessionTimer.textContent = `${mins}:${secs}`;
+      }, 1000);
+    }
+
+    // Agent State IPC Listener
+    ipcRenderer.on('agent-state', (event, state) => {
+      if (state.code && state.code !== '------') {
+        codeBox.textContent = `${state.code.slice(0,3)} ${state.code.slice(3)}`;
+      }
+
+      if (state.technicianName) {
+        currentTechnician = state.technicianName;
+        activeTechnicianTitle.textContent = currentTechnician;
+        consentTechName.textContent = currentTechnician;
+        chatHeaderTitle.textContent = `💬 ${currentTechnician} ile Sohbet`;
+      }
+
+      if (state.sessionActive) {
+        // Connected & Active
+        consentBanner.classList.remove('show');
+        sessionActiveBar.classList.add('show');
+        headerStatusDot.className = 'status-dot';
+        headerStatusText.textContent = 'Canlı Oturum';
+        headerStatusText.style.color = '#10b981';
+        specPermVal.textContent = 'Aktif (Tam Kontrol)';
+        specPermVal.style.color = '#10b981';
+        sysAuthLevel.textContent = '🟢 Aktif Uzak Kontrol';
+        sysAuthLevel.style.color = '#10b981';
+        if (!timerInterval) startSessionTimer();
+      } else if (state.consentPending) {
+        // Consent Needed
+        sessionActiveBar.classList.remove('show');
+        consentBanner.classList.add('show');
+        headerStatusDot.className = 'status-dot yellow';
+        headerStatusText.textContent = 'Onay Bekleniyor';
+        headerStatusText.style.color = '#f59e0b';
+        specPermVal.textContent = 'Onay İsteniyor...';
+        specPermVal.style.color = '#f59e0b';
+        playBeep();
+      } else {
+        // Waiting / In Queue
+        consentBanner.classList.remove('show');
+        sessionActiveBar.classList.remove('show');
+        headerStatusDot.className = state.connected ? 'status-dot' : 'status-dot red';
+        headerStatusText.textContent = state.connected ? 'Kuyrukta' : 'Bağlanıyor';
+        headerStatusText.style.color = state.connected ? '#94a3b8' : '#ef4444';
+        specPermVal.textContent = 'Beklemede';
+        specPermVal.style.color = '#94a3b8';
+      }
     });
 
-    document.getElementById('btn-accept').addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      consentActions.style.display = 'none';
-      statusText.innerHTML = '<span style="color: #34a853; font-weight: bold;">🟢 Uzaktan Ekran Paylaşımı Aktif</span>';
-      dot.className = 'dot';
+    // Consent Responses
+    btnConsentAccept.addEventListener('click', () => {
+      consentBanner.classList.remove('show');
+      sessionActiveBar.classList.add('show');
       ipcRenderer.send('user-consent-choice', 'accepted');
+      startSessionTimer();
     });
-    document.getElementById('btn-decline').addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('Decline clicked');
-      consentActions.style.display = 'none';
+
+    btnConsentDecline.addEventListener('click', () => {
+      consentBanner.classList.remove('show');
       ipcRenderer.send('user-consent-choice', 'declined');
     });
-    document.getElementById('btn-disconnect').addEventListener('click', () => {
-      ipcRenderer.send('user-disconnect');
+
+    // Disconnect Actions
+    function handleDisconnect() {
+      if (confirm('Uzaktan destek oturumunu kapatmak istediğinize emin misiniz?')) {
+        ipcRenderer.send('user-disconnect');
+      }
+    }
+    btnEndSession.addEventListener('click', handleDisconnect);
+    btnQuitApp.addEventListener('click', handleDisconnect);
+
+    // ==========================================
+    // CHAT SYSTEM
+    // ==========================================
+    function appendChatMessage(sender, senderName, text) {
+      const msg = document.createElement('div');
+      msg.className = `chat-msg ${sender === 'agent' ? 'agent' : 'tech'}`;
+
+      const author = document.createElement('div');
+      author.className = 'chat-msg-author';
+      author.textContent = sender === 'agent' ? 'Siz' : (senderName || currentTechnician);
+
+      const content = document.createElement('div');
+      content.textContent = text;
+
+      msg.appendChild(author);
+      msg.appendChild(content);
+      chatFeed.appendChild(msg);
+      chatFeed.scrollTop = chatFeed.scrollHeight;
+
+      if (sender !== 'agent') {
+        playBeep();
+        if (!panelChat.classList.contains('active')) {
+          unreadChatCount++;
+          chatBadge.textContent = unreadChatCount;
+          chatBadge.style.display = 'inline-block';
+        }
+      }
+    }
+
+    function sendChat() {
+      const text = chatInputField.value.trim();
+      if (!text) return;
+      ipcRenderer.send('send-chat-message', text);
+      appendChatMessage('agent', 'Siz', text);
+      chatInputField.value = '';
+    }
+    btnChatSend.addEventListener('click', sendChat);
+    chatInputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendChat();
+      }
+    });
+
+    ipcRenderer.on('chat-message', (event, data) => {
+      if (data && data.text) {
+        appendChatMessage(data.sender, data.senderName, data.text);
+      }
+    });
+
+    // ==========================================
+    // WEBRTC VOIP & AUDIO VISUALIZER
+    // ==========================================
+    async function initMicVisualizer() {
+      try {
+        if (!localVoiceStream) {
+          localVoiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(localVoiceStream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 64;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        function updateMeter() {
+          if (!isMicMuted && analyser) {
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+            const avg = sum / dataArray.length;
+            const pct = Math.min(100, Math.round((avg / 128) * 100));
+            micMeterFill.style.width = pct + '%';
+            micLevelPct.textContent = pct + '%';
+          } else {
+            micMeterFill.style.width = '0%';
+            micLevelPct.textContent = '0%';
+          }
+          micAnimFrame = requestAnimationFrame(updateMeter);
+        }
+        updateMeter();
+      } catch (err) {
+        console.warn('Microphone permission / access error:', err);
+      }
+    }
+
+    async function setupPeerConnection() {
+      if (peerConn) return;
+
+      peerConn = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
+
+      try {
+        if (!localVoiceStream) {
+          localVoiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        localVoiceStream.getTracks().forEach(t => peerConn.addTrack(t, localVoiceStream));
+        if (!audioContext) initMicVisualizer();
+      } catch(err) {
+        console.warn('Mic error:', err);
+      }
+
+      peerConn.onicecandidate = (event) => {
+        if (event.candidate) {
+          ipcRenderer.send('webrtc-signal', { signal: event.candidate });
+        }
+      };
+
+      peerConn.ontrack = (event) => {
+        if (!remoteAudioElem) {
+          remoteAudioElem = new Audio();
+          remoteAudioElem.autoplay = true;
+        }
+        remoteAudioElem.srcObject = event.streams[0];
+        remoteAudioElem.play().catch(() => {});
+        setVoiceCallActive(true);
+      };
+    }
+
+    function setVoiceCallActive(active) {
+      isVoiceActive = active;
+      voiceAvatar.classList.toggle('active', active);
+      callIndicator.style.display = active ? 'inline-block' : 'none';
+      if (active) {
+        voiceTitle.textContent = '🟢 Canlı Sesli Görüşme Aktif';
+        voiceDesc.textContent = `${currentTechnician} ile canlı sesli iletişimdesiniz.`;
+        callBtnIcon.textContent = '🔴';
+        callBtnText.textContent = 'Aramayı Sonlandır';
+        btnCallAction.classList.add('in-call');
+      } else {
+        voiceTitle.textContent = 'Kristal Netliğinde Sesli İletişim';
+        voiceDesc.textContent = 'Teknisyeninizle internet üzerinden gecikmesiz sesli görüşebilirsiniz.';
+        callBtnIcon.textContent = '📞';
+        callBtnText.textContent = 'Sesli Aramayı Başlat';
+        btnCallAction.classList.remove('in-call');
+      }
+    }
+
+    // Toggle Mic Mute
+    btnMicToggle.addEventListener('click', async () => {
+      if (!localVoiceStream) {
+        await initMicVisualizer();
+      }
+      isMicMuted = !isMicMuted;
+      if (localVoiceStream) {
+        localVoiceStream.getAudioTracks().forEach(t => { t.enabled = !isMicMuted; });
+      }
+      btnMicToggle.classList.toggle('muted', isMicMuted);
+      micIcon.textContent = isMicMuted ? '🔇' : '🎤';
+      micTxt.textContent = isMicMuted ? 'Susturuldu' : 'Mikrofon';
+    });
+
+    // Toggle Speaker Mute
+    btnSpeakerToggle.addEventListener('click', () => {
+      if (!remoteAudioElem) return;
+      isSpeakerMuted = !isSpeakerMuted;
+      remoteAudioElem.muted = isSpeakerMuted;
+      btnSpeakerToggle.classList.toggle('muted', isSpeakerMuted);
+      speakerIcon.textContent = isSpeakerMuted ? '🔈' : '🔊';
+      speakerTxt.textContent = isSpeakerMuted ? 'Sessiz' : 'Hoparlör';
+    });
+
+    // Start / End Call
+    btnCallAction.addEventListener('click', async () => {
+      if (isVoiceActive) {
+        if (peerConn) {
+          peerConn.close();
+          peerConn = null;
+        }
+        setVoiceCallActive(false);
+      } else {
+        await setupPeerConnection();
+        const offer = await peerConn.createOffer();
+        await peerConn.setLocalDescription(offer);
+        ipcRenderer.send('webrtc-signal', { signal: offer });
+        setVoiceCallActive(true);
+      }
+    });
+
+    // WebRTC Signal Listener
+    ipcRenderer.on('webrtc-signal', async (event, data) => {
+      const signal = data.signal || data;
+      if (!signal) return;
+
+      try {
+        if (signal.type === 'offer') {
+          await setupPeerConnection();
+          await peerConn.setRemoteDescription(new RTCSessionDescription(signal));
+          const answer = await peerConn.createAnswer();
+          await peerConn.setLocalDescription(answer);
+          ipcRenderer.send('webrtc-signal', { signal: answer });
+          setVoiceCallActive(true);
+        } else if (signal.type === 'answer') {
+          if (peerConn) {
+            await peerConn.setRemoteDescription(new RTCSessionDescription(signal));
+            setVoiceCallActive(true);
+          }
+        } else if (signal.candidate) {
+          if (peerConn) {
+            await peerConn.addIceCandidate(new RTCIceCandidate(signal.candidate));
+          }
+        }
+      } catch(err) {
+        console.error('WebRTC handling error:', err);
+      }
     });
   </script>
 </body>

@@ -1,4 +1,17 @@
-const { app, BrowserWindow, ipcMain, screen, desktopCapturer, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, desktopCapturer, clipboard, Menu } = require('electron');
+try {
+    Menu.setApplicationMenu(null);
+} catch (e) {}
+
+// Disable Chromium occlusion and timer throttling for background/hidden windows
+if (app.commandLine && typeof app.commandLine.appendSwitch === 'function') {
+    app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+    app.commandLine.appendSwitch('disable-renderer-backgrounding');
+    app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+    app.commandLine.appendSwitch('disable-background-timer-throttling');
+    app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+}
+
 const { io } = require('socket.io-client');
 const { spawn, exec } = require('child_process');
 const fs = require('fs');
@@ -40,7 +53,12 @@ process.on('unhandledRejection', (reason) => {
 });
 
 function log(msg) {
-    console.log(`[HomakAgent ${new Date().toISOString()}] ${msg}`);
+    const formatted = `[HomakAgent ${new Date().toISOString()}] ${msg}`;
+    console.log(formatted);
+    try {
+        const logFile = path.join(os.homedir(), 'homak-agent.log');
+        fs.appendFileSync(logFile, formatted + '\r\n');
+    } catch(e) {}
 }
 
 function updateAgentUi() {
@@ -129,10 +147,19 @@ function startInputSimulator() {
         + "  if ($null -eq $line) { break }\r\n"
         + "  try {\r\n"
         + "    if ($line -match '^m (\\d+) (\\d+)') { [void]$u::SetCursorPos([int]$Matches[1], [int]$Matches[2]) }\r\n"
+        + "    elseif ($line -match '^c (\\w+) down (\\d+) (\\d+)') {\r\n"
+        + "      [void]$u::SetCursorPos([int]$Matches[2], [int]$Matches[3])\r\n"
+        + "      if ($Matches[1] -eq 'right') { $u::mouse_event(0x0008,0,0,0,0) } else { $u::mouse_event(0x0002,0,0,0,0) }\r\n"
+        + "    }\r\n"
+        + "    elseif ($line -match '^c (\\w+) up (\\d+) (\\d+)') {\r\n"
+        + "      [void]$u::SetCursorPos([int]$Matches[2], [int]$Matches[3])\r\n"
+        + "      if ($Matches[1] -eq 'right') { $u::mouse_event(0x0010,0,0,0,0) } else { $u::mouse_event(0x0004,0,0,0,0) }\r\n"
+        + "    }\r\n"
         + "    elseif ($line -eq 'c left down')  { $u::mouse_event(0x0002,0,0,0,0) }\r\n"
         + "    elseif ($line -eq 'c left up')    { $u::mouse_event(0x0004,0,0,0,0) }\r\n"
         + "    elseif ($line -eq 'c right down') { $u::mouse_event(0x0008,0,0,0,0) }\r\n"
         + "    elseif ($line -eq 'c right up')   { $u::mouse_event(0x0010,0,0,0,0) }\r\n"
+        + "    elseif ($line -match '^w (-?\\d+)') { $u::mouse_event(0x0800,0,0,[int]$Matches[1],0) }\r\n"
         + "    elseif ($line -match '^k (.+)')   { [System.Windows.Forms.SendKeys]::SendWait($Matches[1]) }\r\n"
         + "  } catch {}\r\n"
         + "}\r\n";
@@ -152,6 +179,13 @@ function stopInputSimulator() {
     if (psProcess && !psProcess.killed) {
         psProcess.kill();
         psProcess = null;
+    }
+}
+
+function stopClipboardSync() {
+    if (clipboardInterval) {
+        clearInterval(clipboardInterval);
+        clipboardInterval = null;
     }
 }
 
@@ -236,19 +270,27 @@ function startScreenCaptureWindow(sessionId) {
     log('Opening screen capture renderer window for session ' + sessionId);
     try {
         rtcWindow = new BrowserWindow({
-            width: 320,
-            height: 180,
+            width: 160,
+            height: 100,
+            x: 0,
+            y: 0,
             show: true,
-            x: -2000,
-            y: -2000,
+            frame: false,
+            transparent: true,
+            hasShadow: false,
             focusable: false,
             skipTaskbar: true,
+            alwaysOnTop: true,
+            opacity: 0.02,
             webPreferences: {
                 nodeIntegration: true,
                 contextIsolation: false,
                 backgroundThrottling: false
             }
         });
+        if (typeof rtcWindow.setIgnoreMouseEvents === 'function') {
+            rtcWindow.setIgnoreMouseEvents(true);
+        }
 
         rtcWindow.loadFile(path.join(__dirname, 'remote.html'));
 
@@ -297,6 +339,10 @@ ipcMain.on('rd-frame', (event, data) => {
 
 ipcMain.on('rd-ready', (event, data) => {
     log('Renderer screen capture ready for session ' + data.sessionId);
+});
+
+ipcMain.on('rd-log', (event, msg) => {
+    log('[Renderer] ' + msg);
 });
 
 ipcMain.on('rd-error', (event, data) => {
@@ -362,21 +408,40 @@ function initSocketConnection(supportCode) {
     socket.on('remote:control', (data) => {
         if (!psProcess) return;
         try {
+            const disp = screen.getPrimaryDisplay();
+            const sf = disp.scaleFactor || 1;
+            const screenW = Math.round(disp.bounds.width * sf);
+            const screenH = Math.round(disp.bounds.height * sf);
+
             if (data.action === 'mousemove') {
                 if (isInputBlocked) return;
-                const disp = screen.getPrimaryDisplay();
-                const sf = disp.scaleFactor || 1;
-                const absX = Math.round(data.x * disp.bounds.width * sf);
-                const absY = Math.round(data.y * disp.bounds.height * sf);
+                const absX = Math.round(data.x * screenW);
+                const absY = Math.round(data.y * screenH);
                 psProcess.stdin.write('m ' + absX + ' ' + absY + '\r\n');
             } else if (data.action === 'mousedown') {
                 if (isInputBlocked) return;
-                const clickCmd = data.button === 'right' ? 'c right down\r\n' : 'c left down\r\n';
-                psProcess.stdin.write(clickCmd);
+                const btn = data.button === 'right' ? 'right' : 'left';
+                if (typeof data.x === 'number' && typeof data.y === 'number') {
+                    const absX = Math.round(data.x * screenW);
+                    const absY = Math.round(data.y * screenH);
+                    psProcess.stdin.write(`c ${btn} down ${absX} ${absY}\r\n`);
+                } else {
+                    psProcess.stdin.write(`c ${btn} down\r\n`);
+                }
             } else if (data.action === 'mouseup') {
                 if (isInputBlocked) return;
-                const clickCmd = data.button === 'right' ? 'c right up\r\n' : 'c left up\r\n';
-                psProcess.stdin.write(clickCmd);
+                const btn = data.button === 'right' ? 'right' : 'left';
+                if (typeof data.x === 'number' && typeof data.y === 'number') {
+                    const absX = Math.round(data.x * screenW);
+                    const absY = Math.round(data.y * screenH);
+                    psProcess.stdin.write(`c ${btn} up ${absX} ${absY}\r\n`);
+                } else {
+                    psProcess.stdin.write(`c ${btn} up\r\n`);
+                }
+            } else if (data.action === 'wheel') {
+                if (isInputBlocked) return;
+                const delta = typeof data.delta === 'number' ? data.delta : 0;
+                psProcess.stdin.write('w ' + delta + '\r\n');
             } else if (data.action === 'keypress') {
                 if (isInputBlocked) return;
                 psProcess.stdin.write('k ' + data.key + '\r\n');
@@ -448,16 +513,30 @@ function initSocketConnection(supportCode) {
 function createAgentWindow() {
     agentWindow = new BrowserWindow({
         width: 440,
-        height: 460,
-        resizable: false,
+        height: 620,
+        minWidth: 400,
+        minHeight: 560,
+        resizable: true,
         minimizable: true,
         maximizable: false,
-        title: 'Homak Remote Support',
+        autoHideMenuBar: true,
+        backgroundColor: '#0a0f1d',
+        title: 'Homak Uzaktan Destek',
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
         }
     });
+    try {
+        agentWindow.setMenuBarVisibility(false);
+    } catch (e) {}
+
+    if (agentWindow.webContents && agentWindow.webContents.session) {
+        agentWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+            if (permission === 'media') return callback(true);
+            callback(false);
+        });
+    }
 
     agentWindow.loadFile(path.join(__dirname, 'agent.html'));
 
@@ -474,27 +553,38 @@ function createAgentWindow() {
 }
 
 ipcMain.on('user-consent-choice', (event, choice) => {
-    log(`User consent choice: ${choice}, currentSessionId: ${currentSessionId}`);
+    log(`User consent choice: ${choice}, currentSessionId: ${currentSessionId}, socketConnected: ${socket && socket.connected}`);
     agentState.consentPending = false;
+
+    // Send consent response to server immediately so technician UI updates instantly
+    if (socket && socket.connected && currentSessionId) {
+        log(`Emitting remote:consent-response for session ${currentSessionId} with result ${choice}`);
+        socket.emit('remote:consent-response', { sessionId: currentSessionId, result: choice });
+    } else {
+        log(`WARNING: Cannot emit consent-response: socket=${!!socket}, connected=${socket?.connected}, sessionId=${currentSessionId}`);
+    }
 
     if (choice === 'accepted') {
         hasBeenAccepted = true;
         agentState.sessionActive = true;
-        agentState.statusText = '🟢 Ekran Paylaşımı Aktif';
-        startInputSimulator();
-        startClipboardSync();
-        sendSystemInfo();
-        if (currentSessionId) {
-            startScreenCaptureWindow(currentSessionId);
+        if (agentWindow && !agentWindow.isDestroyed()) {
+            agentWindow.setSize(420, 580);
         }
+        agentState.statusText = `🟢 ${agentState.technicianName || 'Teknisyen'} Bağlandı`;
+        updateAgentUi();
+
+        try { startInputSimulator(); } catch(e) { log('Error in startInputSimulator: ' + e); }
+        try { startClipboardSync(); } catch(e) { log('Error in startClipboardSync: ' + e); }
+        try { sendSystemInfo(); } catch(e) { log('Error in sendSystemInfo: ' + e); }
+        try {
+            if (currentSessionId) {
+                startScreenCaptureWindow(currentSessionId);
+            }
+        } catch(e) { log('Error in startScreenCaptureWindow: ' + e); }
     } else {
         agentState.sessionActive = false;
         agentState.statusText = 'Bağlantı reddedildi.';
-    }
-    updateAgentUi();
-
-    if (socket && socket.connected && currentSessionId) {
-        socket.emit('remote:consent-response', { sessionId: currentSessionId, result: choice });
+        updateAgentUi();
     }
 });
 
@@ -535,7 +625,7 @@ ipcMain.on('send-chat-message', (event, text) => {
 
 ipcMain.on('webrtc-signal', (event, data) => {
     if (socket && socket.connected && currentSessionId) {
-        socket.emit('webrtc:signal', { sessionId: currentSessionId, ...data });
+        socket.emit('webrtc:signal', { sessionId: currentSessionId, signal: data.signal || data });
     }
 });
 
