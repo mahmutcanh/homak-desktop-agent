@@ -24,6 +24,7 @@ let psProcess = null;
 let socket = null;
 let currentSupportCode = null;
 let currentSessionId = null;
+let currentDisplayIndex = 0;
 let clipboardInterval = null;
 let lastClipboardText = '';
 let agentWindow = null;
@@ -132,123 +133,191 @@ function extractSupportCode() {
 
 function startInputSimulator() {
     stopInputSimulator();
-    log('Spawning PowerShell input simulator...');
+    log('Spawning PowerShell input simulator with Win32 KbdUtil SendInput (Zero-Freeze)...');
     const inputPs1 = path.join(app.getPath('userData'), 'input.ps1');
-    const ps1Content = "Add-Type -AssemblyName System.Windows.Forms\r\n"
-        + "$sig = @'\r\n"
-        + "[DllImport(\"user32.dll\")]\r\n"
-        + "public static extern void mouse_event(int dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);\r\n"
-        + "[DllImport(\"user32.dll\")]\r\n"
-        + "public static extern bool SetCursorPos(int X, int Y);\r\n"
-        + "[DllImport(\"user32.dll\")]\r\n"
-        + "public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);\r\n"
-        + "[DllImport(\"user32.dll\")]\r\n"
-        + "public static extern bool SetWindowDisplayAffinity(IntPtr hWnd, uint dwAffinity);\r\n"
-        + "'@\r\n"
-        + "$u = Add-Type -MemberDefinition $sig -Name 'U32' -Namespace 'Win32' -PassThru\r\n"
-        + "$vkMap = @{\r\n"
-        + "  'ctrl'=[byte]0x11; 'control'=[byte]0x11; 'shift'=[byte]0x10; 'alt'=[byte]0x12; 'menu'=[byte]0x12;\r\n"
-        + "  'win'=[byte]0x5B; 'lwin'=[byte]0x5B; 'rwin'=[byte]0x5C; 'esc'=[byte]0x1B; 'escape'=[byte]0x1B;\r\n"
-        + "  'tab'=[byte]0x09; 'enter'=[byte]0x0D; 'return'=[byte]0x0D; 'backspace'=[byte]0x08;\r\n"
-        + "  'delete'=[byte]0x2E; 'del'=[byte]0x2E; 'space'=[byte]0x20;\r\n"
-        + "  'up'=[byte]0x26; 'down'=[byte]0x28; 'left'=[byte]0x25; 'right'=[byte]0x27;\r\n"
-        + "  'home'=[byte]0x24; 'end'=[byte]0x23; 'pageup'=[byte]0x21; 'pagedown'=[byte]0x22;\r\n"
-        + "  'f1'=[byte]0x70; 'f2'=[byte]0x71; 'f3'=[byte]0x72; 'f4'=[byte]0x73; 'f5'=[byte]0x74; 'f6'=[byte]0x75;\r\n"
-        + "  'f7'=[byte]0x76; 'f8'=[byte]0x77; 'f9'=[byte]0x78; 'f10'=[byte]0x79; 'f11'=[byte]0x7A; 'f12'=[byte]0x7B;\r\n"
-        + "  'a'=[byte]0x41; 'c'=[byte]0x43; 'v'=[byte]0x56; 'x'=[byte]0x58; 'z'=[byte]0x5A; 'd'=[byte]0x44; 'e'=[byte]0x45; 'r'=[byte]0x52\r\n"
-        + "}\r\n"
-        + "while ($true) {\r\n"
-        + "  $line = [Console]::In.ReadLine()\r\n"
-        + "  if ($null -eq $line) { break }\r\n"
-        + "  try {\r\n"
-        + "    if ($line -match '^m (\\d+) (\\d+)') { [void]$u::SetCursorPos([int]$Matches[1], [int]$Matches[2]) }\r\n"
-        + "    elseif ($line -match '^c (\\w+) down (\\d+) (\\d+)') {\r\n"
-        + "      [void]$u::SetCursorPos([int]$Matches[2], [int]$Matches[3])\r\n"
-        + "      if ($Matches[1] -eq 'right') { $u::mouse_event(0x0008,0,0,0,0) } else { $u::mouse_event(0x0002,0,0,0,0) }\r\n"
-        + "    }\r\n"
-        + "    elseif ($line -match '^c (\\w+) up (\\d+) (\\d+)') {\r\n"
-        + "      [void]$u::SetCursorPos([int]$Matches[2], [int]$Matches[3])\r\n"
-        + "      if ($Matches[1] -eq 'right') { $u::mouse_event(0x0010,0,0,0,0) } else { $u::mouse_event(0x0004,0,0,0,0) }\r\n"
-        + "    }\r\n"
-        + "    elseif ($line -eq 'c left down')  { $u::mouse_event(0x0002,0,0,0,0) }\r\n"
-        + "    elseif ($line -eq 'c left up')    { $u::mouse_event(0x0004,0,0,0,0) }\r\n"
-        + "    elseif ($line -eq 'c right down') { $u::mouse_event(0x0008,0,0,0,0) }\r\n"
-        + "    elseif ($line -eq 'c right up')   { $u::mouse_event(0x0010,0,0,0,0) }\r\n"
-        + "    elseif ($line -match '^w (-?\\d+)') { $u::mouse_event(0x0800,0,0,[int]$Matches[1],0) }\r\n"
-        + "    elseif ($line -match '^kd (\\w+)') {\r\n"
-        + "      $k = $Matches[1].ToLower()\r\n"
-        + "      if ($vkMap.ContainsKey($k)) { $u::keybd_event($vkMap[$k], 0, 0, [UIntPtr]::Zero) }\r\n"
-        + "    }\r\n"
-        + "    elseif ($line -match '^ku (\\w+)') {\r\n"
-        + "      $k = $Matches[1].ToLower()\r\n"
-        + "      if ($vkMap.ContainsKey($k)) { $u::keybd_event($vkMap[$k], 0, 2, [UIntPtr]::Zero) }\r\n"
-        + "    }\r\n"
-        + "    elseif ($line -match '^combo (.+)') {\r\n"
-        + "      $c = $Matches[1].ToLower().Trim()\r\n"
-        + "      if ($c -eq 'ctrl-alt-esc' -or $c -eq 'ctrl-shift-esc') {\r\n"
-        + "        $u::keybd_event([byte]0x11, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x10, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x1B, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x1B, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x10, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x11, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "      } elseif ($c -eq 'alt-tab') {\r\n"
-        + "        $u::keybd_event([byte]0x12, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x09, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x09, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x12, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "      } elseif ($c -eq 'alt-f4') {\r\n"
-        + "        $u::keybd_event([byte]0x12, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x73, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x73, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x12, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "      } elseif ($c -eq 'win-d') {\r\n"
-        + "        $u::keybd_event([byte]0x5B, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x44, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x44, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x5B, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "      } elseif ($c -eq 'win-e') {\r\n"
-        + "        $u::keybd_event([byte]0x5B, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x45, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x45, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x5B, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "      } elseif ($c -eq 'win-r') {\r\n"
-        + "        $u::keybd_event([byte]0x5B, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x52, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x52, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x5B, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "      } elseif ($c -eq 'ctrl-a') {\r\n"
-        + "        $u::keybd_event([byte]0x11, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x41, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x41, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x11, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "      } elseif ($c -eq 'ctrl-c') {\r\n"
-        + "        $u::keybd_event([byte]0x11, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x43, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x43, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x11, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "      } elseif ($c -eq 'ctrl-v') {\r\n"
-        + "        $u::keybd_event([byte]0x11, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x56, 0, 0, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x56, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "        $u::keybd_event([byte]0x11, 0, 2, [UIntPtr]::Zero)\r\n"
-        + "      }\r\n"
-        + "    }\r\n"
-        + "    elseif ($line -match '^affinity (\\d+)') {\r\n"
-        + "      [void]$u::SetWindowDisplayAffinity([IntPtr][int64]$Matches[1], [uint32]0x00000011)\r\n"
-        + "    }\r\n"
-        + "    elseif ($line -match '^k (.+)')   { [System.Windows.Forms.SendKeys]::SendWait($Matches[1]) }\r\n"
-        + "  } catch {}\r\n"
-        + "}\r\n";
+
+    const ps1Content = `$csharp = @'
+using System;
+using System.Runtime.InteropServices;
+
+namespace Win32 {
+    public class KbdUtil {
+        [StructLayout(LayoutKind.Sequential)]
+        struct INPUT {
+            public uint type;
+            public MOUSEKEYBDHARDWAREINPUT mkhi;
+        }
+        [StructLayout(LayoutKind.Explicit)]
+        struct MOUSEKEYBDHARDWAREINPUT {
+            [FieldOffset(0)] public MOUSEINPUT mi;
+            [FieldOffset(0)] public KEYBDINPUT ki;
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        struct KEYBDINPUT {
+            public ushort wVk;
+            public ushort wScan;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        struct MOUSEINPUT {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
+        [DllImport("user32.dll")]
+        public static extern void mouse_event(int dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);
+
+        [DllImport("user32.dll")]
+        public static extern bool SetCursorPos(int X, int Y);
+
+        [DllImport("user32.dll")]
+        public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+        [DllImport("user32.dll")]
+        public static extern uint MapVirtualKey(uint uCode, uint uMapType);
+
+        [DllImport("user32.dll")]
+        public static extern bool SetWindowDisplayAffinity(IntPtr hWnd, uint dwAffinity);
+
+        public static void SendUnicode(char c) {
+            INPUT[] inputs = new INPUT[2];
+            inputs[0].type = 1;
+            inputs[0].mkhi.ki.wVk = 0;
+            inputs[0].mkhi.ki.wScan = (ushort)c;
+            inputs[0].mkhi.ki.dwFlags = 0x0004;
+
+            inputs[1].type = 1;
+            inputs[1].mkhi.ki.wVk = 0;
+            inputs[1].mkhi.ki.wScan = (ushort)c;
+            inputs[1].mkhi.ki.dwFlags = 0x0004 | 0x0002;
+
+            SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+        }
+
+        public static void KeyDown(byte vk) {
+            byte scan = (byte)MapVirtualKey(vk, 0);
+            keybd_event(vk, scan, 0, UIntPtr.Zero);
+        }
+
+        public static void KeyUp(byte vk) {
+            byte scan = (byte)MapVirtualKey(vk, 0);
+            keybd_event(vk, scan, 2, UIntPtr.Zero);
+        }
+
+        public static void PressKey(byte vk) {
+            KeyDown(vk);
+            KeyUp(vk);
+        }
+
+        public static void Combo(params byte[] keys) {
+            foreach (byte vk in keys) {
+                KeyDown(vk);
+            }
+            for (int i = keys.Length - 1; i >= 0; i--) {
+                KeyUp(keys[i]);
+            }
+        }
+    }
+}
+'@
+
+Add-Type -TypeDefinition $csharp
+
+$vkMap = @{
+  'ctrl'=[byte]0x11; 'control'=[byte]0x11; 'shift'=[byte]0x10; 'alt'=[byte]0x12; 'menu'=[byte]0x12;
+  'win'=[byte]0x5B; 'lwin'=[byte]0x5B; 'rwin'=[byte]0x5C; 'esc'=[byte]0x1B; 'escape'=[byte]0x1B;
+  'tab'=[byte]0x09; 'enter'=[byte]0x0D; 'return'=[byte]0x0D; 'backspace'=[byte]0x08;
+  'delete'=[byte]0x2E; 'del'=[byte]0x2E; 'space'=[byte]0x20;
+  'up'=[byte]0x26; 'down'=[byte]0x28; 'left'=[byte]0x25; 'right'=[byte]0x27;
+  'home'=[byte]0x24; 'end'=[byte]0x23; 'pageup'=[byte]0x21; 'pagedown'=[byte]0x22;
+  'f1'=[byte]0x70; 'f2'=[byte]0x71; 'f3'=[byte]0x72; 'f4'=[byte]0x73; 'f5'=[byte]0x74; 'f6'=[byte]0x75;
+  'f7'=[byte]0x76; 'f8'=[byte]0x77; 'f9'=[byte]0x78; 'f10'=[byte]0x79; 'f11'=[byte]0x7A; 'f12'=[byte]0x7B;
+  'a'=[byte]0x41; 'c'=[byte]0x43; 'v'=[byte]0x56; 'x'=[byte]0x58; 'z'=[byte]0x5A; 'd'=[byte]0x44; 'e'=[byte]0x45; 'r'=[byte]0x52
+}
+
+while ($true) {
+  $line = [Console]::In.ReadLine()
+  if ($null -eq $line) { break }
+  try {
+    if ($line -match '^m (-?\\d+) (-?\\d+)') { [Win32.KbdUtil]::SetCursorPos([int]$Matches[1], [int]$Matches[2]) }
+    elseif ($line -match '^c (\\w+) down (-?\\d+) (-?\\d+)') {
+      [Win32.KbdUtil]::SetCursorPos([int]$Matches[2], [int]$Matches[3])
+      if ($Matches[1] -eq 'right') { [Win32.KbdUtil]::mouse_event(0x0008,0,0,0,0) } else { [Win32.KbdUtil]::mouse_event(0x0002,0,0,0,0) }
+    }
+    elseif ($line -match '^c (\\w+) up (-?\\d+) (-?\\d+)') {
+      [Win32.KbdUtil]::SetCursorPos([int]$Matches[2], [int]$Matches[3])
+      if ($Matches[1] -eq 'right') { [Win32.KbdUtil]::mouse_event(0x0010,0,0,0,0) } else { [Win32.KbdUtil]::mouse_event(0x0004,0,0,0,0) }
+    }
+    elseif ($line -eq 'c left down')  { [Win32.KbdUtil]::mouse_event(0x0002,0,0,0,0) }
+    elseif ($line -eq 'c left up')    { [Win32.KbdUtil]::mouse_event(0x0004,0,0,0,0) }
+    elseif ($line -eq 'c right down') { [Win32.KbdUtil]::mouse_event(0x0008,0,0,0,0) }
+    elseif ($line -eq 'c right up')   { [Win32.KbdUtil]::mouse_event(0x0010,0,0,0,0) }
+    elseif ($line -match '^w (-?\\d+)') { [Win32.KbdUtil]::mouse_event(0x0800,0,0,[int]$Matches[1],0) }
+    elseif ($line -match '^u ([0-9a-fA-F]+)') {
+      $charCode = [Convert]::ToInt32($Matches[1], 16)
+      [Win32.KbdUtil]::SendUnicode([char]$charCode)
+    }
+    elseif ($line -match '^kd (\\w+)') {
+      $k = $Matches[1].ToLower()
+      if ($vkMap.ContainsKey($k)) { [Win32.KbdUtil]::KeyDown($vkMap[$k]) }
+    }
+    elseif ($line -match '^ku (\\w+)') {
+      $k = $Matches[1].ToLower()
+      if ($vkMap.ContainsKey($k)) { [Win32.KbdUtil]::KeyUp($vkMap[$k]) }
+    }
+    elseif ($line -match '^pk (\\w+)') {
+      $k = $Matches[1].ToLower()
+      if ($vkMap.ContainsKey($k)) { [Win32.KbdUtil]::PressKey($vkMap[$k]) }
+    }
+    elseif ($line -match '^combo (.+)') {
+      $c = $Matches[1].ToLower().Trim()
+      if ($c -eq 'ctrl-alt-esc' -or $c -eq 'ctrl-shift-esc') {
+        [Win32.KbdUtil]::Combo([byte]0x11, [byte]0x10, [byte]0x1B)
+      } elseif ($c -eq 'alt-tab') {
+        [Win32.KbdUtil]::Combo([byte]0x12, [byte]0x09)
+      } elseif ($c -eq 'alt-f4') {
+        [Win32.KbdUtil]::Combo([byte]0x12, [byte]0x73)
+      } elseif ($c -eq 'win-d') {
+        [Win32.KbdUtil]::Combo([byte]0x5B, [byte]0x44)
+      } elseif ($c -eq 'win-e') {
+        [Win32.KbdUtil]::Combo([byte]0x5B, [byte]0x45)
+      } elseif ($c -eq 'win-r') {
+        [Win32.KbdUtil]::Combo([byte]0x5B, [byte]0x52)
+      } elseif ($c -eq 'ctrl-a') {
+        [Win32.KbdUtil]::Combo([byte]0x11, [byte]0x41)
+      } elseif ($c -eq 'ctrl-c') {
+        [Win32.KbdUtil]::Combo([byte]0x11, [byte]0x43)
+      } elseif ($c -eq 'ctrl-v') {
+        [Win32.KbdUtil]::Combo([byte]0x11, [byte]0x56)
+      } elseif ($c -eq 'ctrl-z') {
+        [Win32.KbdUtil]::Combo([byte]0x11, [byte]0x5A)
+      }
+    }
+    elseif ($line -match '^affinity (\\d+)') {
+      [Win32.KbdUtil]::SetWindowDisplayAffinity([IntPtr][int64]$Matches[1], [uint32]0x00000011)
+    }
+  } catch {}
+}
+`;
+
     try {
         fs.mkdirSync(app.getPath('userData'), { recursive: true });
-        fs.writeFileSync(inputPs1, ps1Content);
+        fs.writeFileSync(inputPs1, ps1Content, 'utf8');
     } catch (e) {
         log('Error writing input.ps1: ' + e.message);
     }
 
     psProcess = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', inputPs1]);
-    psProcess.stdin.setDefaultEncoding('utf8');
+    psProcess.stdin.setDefaultEncoding('ascii');
     psProcess.stderr.on('data', (d) => log('[PS Error] ' + d.toString().trim()));
 }
 
@@ -356,6 +425,39 @@ function togglePrivacyScreen(enable) {
     }
 }
 
+
+function getDisplaysList() {
+    try {
+        const displays = screen.getAllDisplays();
+        const primary = screen.getPrimaryDisplay();
+        return displays.map((d, index) => ({
+            index: index,
+            id: d.id,
+            name: `Monitör ${index + 1}${d.id === primary.id ? ' (Birincil)' : ''}`,
+            width: d.bounds.width,
+            height: d.bounds.height,
+            scaleFactor: d.scaleFactor || 1,
+            isPrimary: d.id === primary.id,
+            bounds: d.bounds
+        }));
+    } catch (e) {
+        log('Error getting displays list: ' + e.message);
+        return [];
+    }
+}
+
+function sendDisplaysInfo() {
+    if (socket && socket.connected && currentSessionId) {
+        const list = getDisplaysList();
+        log(`Sending displays info: ${list.length} display(s) detected. Active: ${currentDisplayIndex}`);
+        socket.emit('remote:displays', {
+            sessionId: currentSessionId,
+            displays: list,
+            activeDisplayIndex: currentDisplayIndex
+        });
+    }
+}
+
 function startScreenCaptureWindow(sessionId) {
     if (rtcWindow) {
         try { rtcWindow.close(); } catch(e) {}
@@ -418,7 +520,8 @@ ipcMain.handle('get-screen-source', async () => {
     try {
         const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } });
         if (sources && sources.length > 0) {
-            return sources[0].id;
+            const idx = (currentDisplayIndex >= 0 && currentDisplayIndex < sources.length) ? currentDisplayIndex : 0;
+            return sources[idx].id;
         }
     } catch(e) {
         log('getSources error: ' + e.message);
@@ -503,22 +606,23 @@ function initSocketConnection(supportCode) {
     socket.on('remote:control', (data) => {
         if (!psProcess) return;
         try {
-            const disp = screen.getPrimaryDisplay();
-            const sf = disp.scaleFactor || 1;
-            const screenW = Math.round(disp.bounds.width * sf);
-            const screenH = Math.round(disp.bounds.height * sf);
+            const allDisplays = screen.getAllDisplays();
+            const currentDisp = (currentDisplayIndex >= 0 && currentDisplayIndex < allDisplays.length) 
+                ? allDisplays[currentDisplayIndex] 
+                : screen.getPrimaryDisplay();
+
+            // Multi-monitor origin offset + scaled width/height
+            const b = currentDisp.bounds;
+            const absX = b.x + Math.round(data.x * b.width);
+            const absY = b.y + Math.round(data.y * b.height);
 
             if (data.action === 'mousemove') {
                 if (isInputBlocked) return;
-                const absX = Math.round(data.x * screenW);
-                const absY = Math.round(data.y * screenH);
                 psProcess.stdin.write('m ' + absX + ' ' + absY + '\r\n');
             } else if (data.action === 'mousedown') {
                 if (isInputBlocked) return;
                 const btn = data.button === 'right' ? 'right' : 'left';
                 if (typeof data.x === 'number' && typeof data.y === 'number') {
-                    const absX = Math.round(data.x * screenW);
-                    const absY = Math.round(data.y * screenH);
                     psProcess.stdin.write(`c ${btn} down ${absX} ${absY}\r\n`);
                 } else {
                     psProcess.stdin.write(`c ${btn} down\r\n`);
@@ -527,8 +631,6 @@ function initSocketConnection(supportCode) {
                 if (isInputBlocked) return;
                 const btn = data.button === 'right' ? 'right' : 'left';
                 if (typeof data.x === 'number' && typeof data.y === 'number') {
-                    const absX = Math.round(data.x * screenW);
-                    const absY = Math.round(data.y * screenH);
                     psProcess.stdin.write(`c ${btn} up ${absX} ${absY}\r\n`);
                 } else {
                     psProcess.stdin.write(`c ${btn} up\r\n`);
@@ -537,6 +639,37 @@ function initSocketConnection(supportCode) {
                 if (isInputBlocked) return;
                 const delta = typeof data.delta === 'number' ? data.delta : 0;
                 psProcess.stdin.write('w ' + delta + '\r\n');
+            } else if (data.action === 'char') {
+                if (isInputBlocked) return;
+                const charStr = data.char || '';
+                for (let i = 0; i < charStr.length; i++) {
+                    const hex = charStr.charCodeAt(i).toString(16);
+                    psProcess.stdin.write('u ' + hex + '\r\n');
+                }
+            } else if (data.action === 'special-key') {
+                if (isInputBlocked) return;
+                const sk = (data.key || '').toLowerCase();
+                const map = {
+                    'enter': 'enter',
+                    'escape': 'esc',
+                    'esc': 'esc',
+                    'backspace': 'backspace',
+                    'tab': 'tab',
+                    'delete': 'delete',
+                    'space': 'space',
+                    'arrowup': 'up',
+                    'arrowdown': 'down',
+                    'arrowleft': 'left',
+                    'arrowright': 'right',
+                    'home': 'home',
+                    'end': 'end',
+                    'pageup': 'pageup',
+                    'pagedown': 'pagedown',
+                    'f1': 'f1', 'f2': 'f2', 'f3': 'f3', 'f4': 'f4', 'f5': 'f5', 'f6': 'f6',
+                    'f7': 'f7', 'f8': 'f8', 'f9': 'f9', 'f10': 'f10', 'f11': 'f11', 'f12': 'f12'
+                };
+                const mapped = map[sk] || sk;
+                psProcess.stdin.write('pk ' + mapped + '\r\n');
             } else if (data.action === 'keydown') {
                 if (isInputBlocked) return;
                 psProcess.stdin.write('kd ' + (data.key || '') + '\r\n');
@@ -548,7 +681,22 @@ function initSocketConnection(supportCode) {
                 psProcess.stdin.write('combo ' + (data.combo || '') + '\r\n');
             } else if (data.action === 'keypress') {
                 if (isInputBlocked) return;
-                psProcess.stdin.write('k ' + data.key + '\r\n');
+                const k = data.key || '';
+                if (k.length === 1) {
+                    const hex = k.charCodeAt(0).toString(16);
+                    psProcess.stdin.write('u ' + hex + '\r\n');
+                } else if (k.startsWith('{') && k.endsWith('}')) {
+                    const cleanKey = k.slice(1, -1).toLowerCase();
+                    const map = {
+                        'enter': 'enter', 'esc': 'esc', 'backspace': 'backspace',
+                        'tab': 'tab', 'delete': 'delete', 'up': 'up', 'down': 'down',
+                        'left': 'left', 'right': 'right', 'home': 'home', 'end': 'end',
+                        'pgup': 'pageup', 'pgdn': 'pagedown'
+                    };
+                    psProcess.stdin.write('pk ' + (map[cleanKey] || cleanKey) + '\r\n');
+                } else {
+                    psProcess.stdin.write('pk ' + k.toLowerCase() + '\r\n');
+                }
             } else if (data.action === 'ctrl-alt-del') {
                 exec('taskmgr.exe');
             } else if (data.action === 'run-cmd') {
@@ -569,6 +717,32 @@ function initSocketConnection(supportCode) {
             log('Control write error: ' + e.message);
         }
     });
+    socket.on('remote:get-displays', (data) => {
+        if (data.sessionId === currentSessionId) {
+            sendDisplaysInfo();
+        }
+    });
+
+    socket.on('remote:switch-display', async (data) => {
+        if (data.sessionId !== currentSessionId) return;
+        const targetIdx = typeof data.displayIndex === 'number' ? data.displayIndex : 0;
+        const displays = screen.getAllDisplays();
+        if (targetIdx >= 0 && targetIdx < displays.length) {
+            currentDisplayIndex = targetIdx;
+            log(`Switching active display to Monitör ${targetIdx + 1} (${displays[targetIdx].id})`);
+            try {
+                const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } });
+                const source = sources[targetIdx] || sources[0];
+                if (rtcWindow && !rtcWindow.isDestroyed()) {
+                    rtcWindow.webContents.send('switch-source', { sourceId: source.id });
+                }
+            } catch(e) {
+                log('Error switching display source: ' + e.message);
+            }
+            sendDisplaysInfo();
+        }
+    });
+
 
     socket.on('remote:stop', () => {
         log('Received remote:stop signal');
@@ -696,6 +870,7 @@ ipcMain.on('user-consent-choice', (event, choice) => {
         try { startInputSimulator(); } catch(e) { log('Error in startInputSimulator: ' + e); }
         try { startClipboardSync(); } catch(e) { log('Error in startClipboardSync: ' + e); }
         try { sendSystemInfo(); } catch(e) { log('Error in sendSystemInfo: ' + e); }
+        try { sendDisplaysInfo(); } catch(e) { log('Error in sendDisplaysInfo: ' + e); }
         try {
             if (currentSessionId) {
                 startScreenCaptureWindow(currentSessionId);

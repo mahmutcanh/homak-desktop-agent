@@ -103,3 +103,30 @@ ipcRenderer.on('rd-stop', () => {
         video.srcObject = null;
     }
 });
+
+ipcRenderer.on('switch-source', async (event, data) => {
+    const { sourceId } = data;
+    ipcRenderer.send('rd-log', 'Switching screen capture source to ' + sourceId);
+    try {
+        if (video.srcObject) {
+            const oldTracks = video.srcObject.getTracks();
+            oldTracks.forEach(t => t.stop());
+        }
+        const newStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+                mandatory: {
+                    chromeMediaSource: 'desktop',
+                    chromeMediaSourceId: sourceId,
+                    maxWidth: 2560,
+                    maxHeight: 1440
+                }
+            }
+        });
+        video.srcObject = newStream;
+        await video.play().catch(() => {});
+        ipcRenderer.send('rd-log', 'Successfully switched screen stream to ' + sourceId);
+    } catch(err) {
+        ipcRenderer.send('rd-error', { error: 'Failed to switch screen source: ' + err.message });
+    }
+});
