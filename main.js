@@ -238,11 +238,13 @@ function startScreenCaptureWindow(sessionId) {
         rtcWindow = null;
     }
 
-    log('Opening hidden screen capture renderer window...');
+    log('Opening screen capture renderer window...');
     rtcWindow = new BrowserWindow({
         width: 320,
         height: 180,
-        show: false,
+        show: true,
+        x: -2000,
+        y: -2000,
         focusable: false,
         skipTaskbar: true,
         webPreferences: {

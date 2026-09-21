@@ -21,15 +21,26 @@ ipcRenderer.on('start-capture', async (event, data) => {
             video: {
                 mandatory: {
                     chromeMediaSource: 'desktop',
-                    chromeMediaSourceId: sourceId
+                    chromeMediaSourceId: sourceId,
+                    minWidth: 1280,
+                    maxWidth: 1920,
+                    minHeight: 720,
+                    maxHeight: 1080
                 }
             }
         });
 
         video.srcObject = stream;
-        video.onloadedmetadata = () => {
-            video.play().catch(e => console.error(e));
+        video.onloadedmetadata = async () => {
+            try {
+                await video.play();
+            } catch(e) {
+                console.error(e);
+            }
         };
+        try {
+            await video.play();
+        } catch(e) {}
 
         streaming = true;
         ipcRenderer.send('rd-ready', { sessionId });
