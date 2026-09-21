@@ -1792,6 +1792,12 @@
     });
 
     // ==========================================
+    ipcRenderer.on('file-received', (event, data) => {
+      appendChatMessage('system', 'Sistem', '📁 Teknisyenden dosya alındı: ' + data.fileName + ' (İndirilenler klasörüne kaydedildi)');
+      try { playAlertChime(); } catch(e) {}
+      switchTab('chat');
+    });
+
     // WEBRTC VOIP & AUDIO VISUALIZER
     // ==========================================
     async function initMicVisualizer() {

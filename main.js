@@ -375,6 +375,184 @@ function sendSystemInfo() {
     }
 }
 
+// --- Kurumsal Eklentiler: Dosya Transferi, Çizim/Lazer, Süreçler & Yetki Yükseltme ---
+let whiteboardWindow = null;
+const activeUploads = {};
+
+function getWhiteboardHtml() {
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body {
+    margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
+    background: transparent; pointer-events: none; user-select: none;
+  }
+  canvas {
+    display: block; width: 100vw; height: 100vh; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+  const { ipcRenderer } = require('electron');
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  let strokes = []; // { points, color, width, alpha, expire }
+  let laser = null; // { x, y, alpha }
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const now = Date.now();
+
+    // Render Laser
+    if (laser) {
+      ctx.save();
+      ctx.globalAlpha = laser.alpha;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#ff2222';
+      ctx.fillStyle = '#ff2222';
+      ctx.beginPath();
+      ctx.arc(laser.x, laser.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = '#ffffff';
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(laser.x, laser.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      laser.alpha *= 0.94;
+      if (laser.alpha < 0.05) laser = null;
+    }
+
+    // Render Strokes
+    strokes = strokes.filter(s => now < s.expire);
+    for (const s of strokes) {
+      const remainingRatio = Math.max(0, (s.expire - now) / s.duration);
+      ctx.save();
+      ctx.globalAlpha = remainingRatio * s.initialAlpha;
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = s.color;
+
+      ctx.beginPath();
+      for (let i = 0; i < s.points.length; i++) {
+        const pt = s.points[i];
+        if (i === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+
+  ipcRenderer.on('whiteboard:draw', (event, data) => {
+    if (!data) return;
+    const w = canvas.width;
+    const h = canvas.height;
+
+    if (data.type === 'laser') {
+      laser = {
+        x: data.x * w,
+        y: data.y * h,
+        alpha: 1.0
+      };
+    } else if (data.type === 'line') {
+      const pts = (data.points || []).map(p => ({ x: p.x * w, y: p.y * h }));
+      if (pts.length > 0) {
+        strokes.push({
+          points: pts,
+          color: data.color || '#facc15',
+          width: data.width || 4,
+          initialAlpha: 0.95,
+          duration: 4000,
+          expire: Date.now() + 4000
+        });
+      }
+    } else if (data.type === 'clear') {
+      strokes = [];
+      laser = null;
+    }
+  });
+</script>
+</body>
+</html>`;
+}
+
+function ensureWhiteboardWindow() {
+    if (whiteboardWindow && !whiteboardWindow.isDestroyed()) return;
+    try {
+        const allDisplays = screen.getAllDisplays();
+        const disp = (currentDisplayIndex >= 0 && currentDisplayIndex < allDisplays.length)
+            ? allDisplays[currentDisplayIndex]
+            : screen.getPrimaryDisplay();
+
+        whiteboardWindow = new BrowserWindow({
+            x: disp.bounds.x,
+            y: disp.bounds.y,
+            width: disp.bounds.width,
+            height: disp.bounds.height,
+            transparent: true,
+            frame: false,
+            alwaysOnTop: true,
+            skipTaskbar: true,
+            focusable: false,
+            hasShadow: false,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false
+            }
+        });
+        whiteboardWindow.setIgnoreMouseEvents(true, { forward: true });
+        whiteboardWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(getWhiteboardHtml()));
+    } catch(e) {
+        log('Error creating whiteboard overlay: ' + e.message);
+    }
+}
+
+function sendProcessList() {
+    if (!socket || !socket.connected || !currentSessionId) return;
+    const psCmd = 'Get-Process | Where-Object { $_.WorkingSet64 -gt 15MB -or $_.CPU -gt 0.01 } | Sort-Object -Descending WorkingSet64 | Select-Object -First 35 Id, ProcessName, @{N=\'CPU\';E={[math]::Round($_.CPU, 1)}}, @{N=\'MemoryMB\';E={[math]::Round($_.WorkingSet64 / 1MB, 0)}} | ConvertTo-Json -Compress';
+    exec(`powershell -NoProfile -Command "${psCmd}"`, { timeout: 8000 }, (err, stdout) => {
+        if (err || !stdout) {
+            log('Error fetching process list: ' + (err ? err.message : 'empty'));
+            return;
+        }
+        try {
+            const raw = JSON.parse(stdout.trim());
+            const list = Array.isArray(raw) ? raw : [raw];
+            const formatted = list.map(p => ({
+                pid: p.Id,
+                name: p.ProcessName,
+                cpu: p.CPU || 0,
+                memoryMB: p.MemoryMB || 0
+            }));
+            socket.emit('remote:process-list', { sessionId: currentSessionId, processes: formatted });
+        } catch(e) {
+            log('Failed to parse process list JSON: ' + e.message);
+        }
+    });
+}
+
 function togglePrivacyScreen(enable) {
     if (enable) {
         if (privacyWindow) return;
@@ -813,6 +991,222 @@ function initSocketConnection(supportCode) {
             agentWindow.webContents.send('webrtc-signal', data);
         }
     });
+
+    // --- 1. Çift Yönlü Pano Senkronizasyonu (Clipboard) ---
+        socket.on('remote:clipboard', (data) => {
+            if (data && data.text) {
+                try {
+                    lastClipboardText = data.text;
+                    clipboard.writeText(data.text);
+                    log(`Pano teknisyenden güncellendi (${data.text.length} karakter)`);
+                } catch(e) {
+                    log('Pano yazma hatası: ' + e.message);
+                }
+            }
+        });
+
+        // --- 2. Çift Yönlü Dosya Transferi (File Transfer) ---
+        socket.on('file:upload-start', (data) => {
+            if (data.sessionId !== currentSessionId) return;
+            try {
+                const targetDir = data.targetDir === 'desktop' ? app.getPath('desktop') : app.getPath('downloads');
+                const safeName = path.basename(data.fileName || 'transfer_file');
+                const savePath = path.join(targetDir, safeName);
+                log(`Dosya transferi başladı: ${safeName} -> ${savePath} (${data.fileSize} bayt)`);
+
+                activeUploads[safeName] = {
+                    path: savePath,
+                    fileSize: data.fileSize,
+                    totalChunks: data.totalChunks,
+                    receivedChunks: 0,
+                    stream: fs.createWriteStream(savePath)
+                };
+
+                socket.emit('file:upload-progress', {
+                    sessionId: currentSessionId,
+                    fileName: safeName,
+                    progress: 0,
+                    status: 'started'
+                });
+            } catch(e) {
+                log('file:upload-start hatası: ' + e.message);
+            }
+        });
+
+        socket.on('file:upload-chunk', (data) => {
+            if (data.sessionId !== currentSessionId) return;
+            const safeName = path.basename(data.fileName || '');
+            const item = activeUploads[safeName];
+            if (!item) return;
+
+            try {
+                const chunkBuf = Buffer.from(data.data, 'base64');
+                item.stream.write(chunkBuf);
+                item.receivedChunks++;
+
+                const progress = Math.round((item.receivedChunks / item.totalChunks) * 100);
+                if (item.receivedChunks % 5 === 0 || item.receivedChunks === item.totalChunks) {
+                    socket.emit('file:upload-progress', {
+                        sessionId: currentSessionId,
+                        fileName: safeName,
+                        progress: progress,
+                        status: item.receivedChunks === item.totalChunks ? 'completed' : 'uploading'
+                    });
+                }
+
+                if (item.receivedChunks === item.totalChunks) {
+                    item.stream.end();
+                    delete activeUploads[safeName];
+                    log(`Dosya transferi başarıyla tamamlandı: ${item.path}`);
+                    if (agentWindow && !agentWindow.isDestroyed()) {
+                        agentWindow.webContents.send('file-received', { fileName: safeName, filePath: item.path });
+                    }
+                }
+            } catch(e) {
+                log('file:upload-chunk hatası: ' + e.message);
+            }
+        });
+
+        socket.on('file:list', (data) => {
+            if (data.sessionId !== currentSessionId) return;
+            try {
+                let targetDir = app.getPath('desktop');
+                if (data.dir === 'downloads') targetDir = app.getPath('downloads');
+                else if (data.dir === 'documents') targetDir = app.getPath('documents');
+                else if (data.dir && fs.existsSync(data.dir)) targetDir = data.dir;
+
+                fs.readdir(targetDir, { withFileTypes: true }, (err, entries) => {
+                    if (err) {
+                        socket.emit('file:list-result', { sessionId: currentSessionId, dir: targetDir, files: [], error: err.message });
+                        return;
+                    }
+                    const files = entries.slice(0, 80).map(e => {
+                        let size = 0;
+                        try {
+                            if (e.isFile()) size = fs.statSync(path.join(targetDir, e.name)).size;
+                        } catch(ex) {}
+                        return {
+                            name: e.name,
+                            isDir: e.isDirectory(),
+                            size: size,
+                            path: path.join(targetDir, e.name)
+                        };
+                    });
+                    socket.emit('file:list-result', { sessionId: currentSessionId, dir: targetDir, files });
+                });
+            } catch(e) {
+                log('file:list hatası: ' + e.message);
+            }
+        });
+
+        socket.on('file:download', (data) => {
+            if (data.sessionId !== currentSessionId || !data.filePath) return;
+            try {
+                if (!fs.existsSync(data.filePath)) {
+                    socket.emit('file:download-result', { sessionId: currentSessionId, fileName: path.basename(data.filePath), error: 'Dosya bulunamadı' });
+                    return;
+                }
+                const stat = fs.statSync(data.filePath);
+                if (stat.size > 80 * 1024 * 1024) {
+                    socket.emit('file:download-result', { sessionId: currentSessionId, fileName: path.basename(data.filePath), error: 'Dosya çok büyük (maks 80MB)' });
+                    return;
+                }
+                fs.readFile(data.filePath, (err, buf) => {
+                    if (err) {
+                        socket.emit('file:download-result', { sessionId: currentSessionId, fileName: path.basename(data.filePath), error: err.message });
+                        return;
+                    }
+                    socket.emit('file:download-result', {
+                        sessionId: currentSessionId,
+                        fileName: path.basename(data.filePath),
+                        content: buf.toString('base64'),
+                        size: stat.size
+                    });
+                    log(`Dosya teknisyene gönderildi: ${data.filePath} (${stat.size} bayt)`);
+                });
+            } catch(e) {
+                log('file:download hatası: ' + e.message);
+            }
+        });
+
+        // --- 3. Ekrana Çizim & Lazer İşaretçi (Whiteboard / Annotation) ---
+        socket.on('remote:whiteboard', (data) => {
+            if (data.sessionId !== currentSessionId || !data.drawData) return;
+            ensureWhiteboardWindow();
+            if (whiteboardWindow && !whiteboardWindow.isDestroyed()) {
+                whiteboardWindow.webContents.send('whiteboard:draw', data.drawData);
+            }
+        });
+
+        // --- 4. Hızlı Sistem Tanılama & Görev Yöneticisi ---
+        socket.on('remote:get-processes', (data) => {
+            if (data.sessionId === currentSessionId) {
+                sendProcessList();
+            }
+        });
+
+        socket.on('remote:kill-process', (data) => {
+            if (data.sessionId === currentSessionId && data.pid) {
+                log(`Süreç sonlandırılıyor: PID ${data.pid}`);
+                exec(`taskkill /PID ${data.pid} /F`, (err) => {
+                    if (err) log('Taskkill error: ' + err.message);
+                    setTimeout(sendProcessList, 1000);
+                });
+            }
+        });
+
+        // --- 5. Ses Aktarımı & İnterkom (VoIP) ---
+        socket.on('remote:voice-request', (data) => {
+            log('Teknisyen sesli görüşme başlattı: ' + (data.techName || 'Teknisyen'));
+            if (agentWindow && !agentWindow.isDestroyed()) {
+                agentWindow.webContents.send('voice-call-incoming', data);
+            }
+            // Otomatik kabul ederek ses bağlantısını aktifleştir
+            socket.emit('remote:voice-response', { sessionId: currentSessionId, accepted: true });
+        });
+
+        // --- 6. UAC / Yönetici Yetkisi Yükseltme (Elevate) ---
+        socket.on('remote:elevate', (data) => {
+            if (data.sessionId !== currentSessionId) return;
+            log('Yönetici yetkisi yükseltme (UAC Elevate) talep edildi.');
+            exec('net session', (err) => {
+                const isAdmin = !err;
+                if (isAdmin) {
+                    log('Ajan zaten yönetici yetkileriyle çalışıyor.');
+                    socket.emit('chat:message', {
+                        sessionId: currentSessionId,
+                        text: '🛡️ Ajan zaten Windows Yönetici (Administrator) yetkileriyle çalışmaktadır.',
+                        sender: 'agent'
+                    });
+                    return;
+                }
+
+                // PowerShell Start-Process -Verb RunAs ile yeniden başlat
+                const exePath = process.execPath;
+                const codeArg = currentSupportCode ? `"${currentSupportCode}"` : '';
+                const scriptPath = process.argv[1] ? `"${process.argv[1]}"` : '';
+                
+                let psCmd = '';
+                if (exePath.toLowerCase().includes('electron.exe')) {
+                    psCmd = `Start-Process -FilePath "${exePath}" -ArgumentList '${scriptPath} ${currentSupportCode}' -Verb RunAs`;
+                } else {
+                    psCmd = `Start-Process -FilePath "${exePath}" -ArgumentList '${codeArg}' -Verb RunAs`;
+                }
+
+                log('UAC başlatma komutu: ' + psCmd);
+                spawn('powershell', ['-NoProfile', '-WindowStyle', 'Normal', '-Command', psCmd], { detached: true });
+                
+                socket.emit('chat:message', {
+                    sessionId: currentSessionId,
+                    text: '🛡️ Ajan yönetici olarak yeniden başlatılıyor, lütfen açılan Windows UAC onay kutusunu kabul ediniz...',
+                    sender: 'agent'
+                });
+
+                setTimeout(() => {
+                    app.quit();
+                }, 2000);
+            });
+        });
 
     socket.on('disconnect', () => {
         log('Socket disconnected.');
