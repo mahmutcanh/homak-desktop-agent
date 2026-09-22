@@ -132,6 +132,10 @@ function extractSupportCode() {
 }
 
 function startInputSimulator() {
+    if (psProcess && !psProcess.killed) {
+        log('PowerShell input simulator is already running and warm.');
+        return;
+    }
     stopInputSimulator();
     log('Spawning PowerShell input simulator with Win32 KbdUtil SendInput (Zero-Freeze)...');
     const inputPs1 = path.join(app.getPath('userData'), 'input.ps1');
@@ -744,7 +748,8 @@ function initSocketConnection(supportCode) {
     log(`Connecting to ${SERVER_URL}/support-ws with supportCode ${supportCode}...`);
 
     socket = io(`${SERVER_URL}/support-ws`, {
-        transports: ['websocket', 'polling'],
+        transports: ['websocket'],
+        upgrade: false,
         reconnection: true
     });
 
@@ -1349,6 +1354,11 @@ ipcMain.on('webrtc-signal', (event, data) => {
 
 app.whenReady().then(() => {
     createAgentWindow();
+
+    // Pre-warm PowerShell input simulator in background to eliminate session start freeze
+    setTimeout(() => {
+        try { startInputSimulator(); } catch(e) {}
+    }, 400);
 
     const code = extractSupportCode();
     if (code) {
